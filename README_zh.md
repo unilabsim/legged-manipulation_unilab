@@ -67,4 +67,5 @@ MuJoCo 场景；标定工具没有 ONNX 策略参数。通过各命令的 `--hel
 - [任务 owner 与命令](docs/zh_CN/4-tasks/4-manip_loco.md)
 - [调参与 IK 检查](docs/zh_CN/8-manipulation/2-manip_loco.md)
 - [架构与拆分记录](docs/ARCHITECTURE.md)
+- [迁移验收记录](docs/VALIDATION.md)
 - [源文件清单](MIGRATION_MANIFEST.json)与[许可说明](NOTICE.md)

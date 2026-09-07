@@ -70,4 +70,5 @@ policy argument. Use each command's `--help` for its options.
 - [Task owners and commands](docs/en/4-tasks/4-manip_loco.md)
 - [Tuning and IK checks](docs/en/8-manipulation/2-manip_loco.md)
 - [Architecture and extraction record](docs/ARCHITECTURE.md)
+- [Executed migration checks](docs/VALIDATION.md)
 - [Source provenance](MIGRATION_MANIFEST.json) and [license notices](NOTICE.md)
