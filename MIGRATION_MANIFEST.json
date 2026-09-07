@@ -1,0 +1,175 @@
+{
+  "sources": {
+    "UniLab": "d9afc9656e63c82a64263f5a4dbd938ba1652af2",
+    "unilab_rl": "801ab92328d892aa7a084a8217aee8cc16eb0e20"
+  },
+  "files": {
+    "src/legged_manipulation_unilab/tasks/go2_arm/__init__.py": {
+      "source": "UniLab/src/unilab/tasks/locomotion/go2_arm/__init__.py",
+      "sha256": "2e1b243ad7abec111f1b689669bb82efb89328257b90dcfc50fb0f2cecfc7b0d"
+    },
+    "src/legged_manipulation_unilab/tasks/go2_arm/base.py": {
+      "source": "UniLab/src/unilab/tasks/locomotion/go2_arm/base.py",
+      "sha256": "2d2e53b24cf25f1d92be5b79f11671cb24cbdcbf7ae43f5b2422e29210df9678"
+    },
+    "src/legged_manipulation_unilab/tasks/go2_arm/manip_loco.py": {
+      "source": "UniLab/src/unilab/tasks/locomotion/go2_arm/manip_loco.py",
+      "sha256": "6e35ff50a3daaa0a24172ecd5bfb9b20b54211494318995b6b13971377a42878"
+    },
+    "src/legged_manipulation_unilab/algos/him_ppo/__init__.py": {
+      "source": "unilab_rl/src/uni_rl/algos/him_ppo/__init__.py",
+      "sha256": "2b7ded25c089669003c5869e1a7408eadf8ab67a0dea5331bcffb0fcc60d3d77"
+    },
+    "src/legged_manipulation_unilab/algos/him_ppo/actor_critic.py": {
+      "source": "unilab_rl/src/uni_rl/algos/him_ppo/actor_critic.py",
+      "sha256": "72cf1ac92437fd822746dc5f184931ab9d4efb579fd288ed8fa2559bbf4586f0"
+    },
+    "src/legged_manipulation_unilab/algos/him_ppo/algorithm.py": {
+      "source": "unilab_rl/src/uni_rl/algos/him_ppo/algorithm.py",
+      "sha256": "c670ac5358b18e9c5192745b34dff54ab222e1fbf4d19a2d9de23b1f1596ad58"
+    },
+    "src/legged_manipulation_unilab/algos/him_ppo/estimator.py": {
+      "source": "unilab_rl/src/uni_rl/algos/him_ppo/estimator.py",
+      "sha256": "920d7b528dbfe7f0b3cd0d0f293fe9bac19fbf98392b449fbc029deef0dfc874"
+    },
+    "src/legged_manipulation_unilab/algos/him_ppo/runner.py": {
+      "source": "unilab_rl/src/uni_rl/algos/him_ppo/runner.py",
+      "sha256": "a92a711256b1ead5eb1166f46da206e5367d0c0bfbb83af14900cab86b36248e"
+    },
+    "src/legged_manipulation_unilab/algos/him_ppo/storage.py": {
+      "source": "unilab_rl/src/uni_rl/algos/him_ppo/storage.py",
+      "sha256": "557719f05da2796fc6177795c3a1f42dc36928b6c136aff2fb07412eb49889c3"
+    },
+    "src/legged_manipulation_unilab/conf/ppo_him/config.yaml": {
+      "source": "UniLab/src/unilab/conf/ppo_him/config.yaml",
+      "sha256": "223c61982d741f5a8fa8a22ac9275a1e1d5edc80486fb085c9abe56533129314"
+    },
+    "src/legged_manipulation_unilab/conf/ppo_him/task/go2_arm_manip_loco/mujoco.yaml": {
+      "source": "UniLab/src/unilab/conf/ppo_him/task/go2_arm_manip_loco/mujoco.yaml",
+      "sha256": "b9fcd08c3f5beb767afbd53e5765697dade30ac84f9cf39c55d712535378eb8c"
+    },
+    "src/legged_manipulation_unilab/conf/ppo/task/go2_arm_manip_loco/motrix.yaml": {
+      "source": "UniLab/src/unilab/conf/ppo/task/go2_arm_manip_loco/motrix.yaml",
+      "sha256": "f505891a304393b0ab6308f8c0c6f7229952269507743d27a035093646a9bfae"
+    },
+    "src/legged_manipulation_unilab/conf/ppo/task/go2_arm_manip_loco/mujoco.yaml": {
+      "source": "UniLab/src/unilab/conf/ppo/task/go2_arm_manip_loco/mujoco.yaml",
+      "sha256": "ceb59a67176ad950ed81193420f93f5649f1af5d8d7d6af9c3130bac04ab673e"
+    },
+    "src/legged_manipulation_unilab/conf/ppo/config.yaml": {
+      "source": "UniLab/src/unilab/conf/ppo/config.yaml",
+      "sha256": "2820f486cd0eac32060d47f9bf0a2636afead533b1f9b156711d21de2961e3d5"
+    },
+    "src/legged_manipulation_unilab/assets/robots/go2_arm/go2_with_arm_mjx_full_collision.xml": {
+      "source": "UniLab/src/unilab/assets/robots/go2_arm/go2_with_arm_mjx_full_collision.xml",
+      "sha256": "8f14ca7b4a2420688f6aee28026bf431a7989c8375243b70ce81a7ea96102b16"
+    },
+    "src/legged_manipulation_unilab/assets/robots/go2_arm/scene_flat.xml": {
+      "source": "UniLab/src/unilab/assets/robots/go2_arm/scene_flat.xml",
+      "sha256": "4f3f874deb944f3374c0cf2968431a022b6c1ce3eecd754db5aac2e2363fc7d5"
+    },
+    "src/legged_manipulation_unilab/tools/benchmark_site_jacobian.py": {
+      "source": "UniLab/scripts/manip_loco/benchmark_site_jacobian.py",
+      "sha256": "9f0f637b4ae5c0d40af1eed32332a04ccc67d5622180c98a9873f46ab0f60f0a"
+    },
+    "src/legged_manipulation_unilab/tools/calibrate_go2_arm_ee_orientation.py": {
+      "source": "UniLab/scripts/manip_loco/calibrate_go2_arm_ee_orientation.py",
+      "sha256": "1e074c9601629255f59734724d1abda50623c4e0733370a12cdf9fd57eb6add0"
+    },
+    "src/legged_manipulation_unilab/tools/diagnose_go2_arm_ik.py": {
+      "source": "UniLab/scripts/manip_loco/diagnose_go2_arm_ik.py",
+      "sha256": "53d2156cdcc167fe7ce9455fc3f7d4549d998966eeb1c9cc93a63771380bfb05"
+    },
+    "src/legged_manipulation_unilab/tools/play_go2_arm_ik_only.py": {
+      "source": "UniLab/scripts/manip_loco/play_go2_arm_ik_only.py",
+      "sha256": "1d1c8948cfc8ca4be903d72a38638ad23eafb96eab36ef238136bf7a63e1ab54"
+    },
+    "src/legged_manipulation_unilab/training/him.py": {
+      "source": "UniLab/scripts/train_him_ppo.py",
+      "sha256": "2239e3c03c85cf937d0213f212fb3df27fd8f36b9039332fef59c94922552b2e"
+    },
+    "tests/tasks/__init__.py": {
+      "source": "UniLab/tests/envs/locomotion/go2_arm/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "tests/tasks/test_base_ik.py": {
+      "source": "UniLab/tests/envs/locomotion/go2_arm/test_base_ik.py",
+      "sha256": "6dc2a735c2a1ceb1a69fc0891d4861eaa4def6e10a291768cc92986b9a420839"
+    },
+    "tests/tasks/test_manip_loco_contract.py": {
+      "source": "UniLab/tests/envs/locomotion/go2_arm/test_manip_loco_contract.py",
+      "sha256": "dc3c9b3f332cdb066da08a933966ea7795187de8b03809284957c2dfbccd67e4"
+    },
+    "tests/algos/test_him_ppo_runner.py": {
+      "source": "unilab_rl/tests/algos/test_him_ppo_runner.py",
+      "sha256": "70877c71fa6b621d0901cb760ee83a3ffaf377db02ac37ff9b0e1139a235f525"
+    },
+    "docs/en/4-tasks/4-manip_loco.md": {
+      "source": "UniLab/docs/sphinx/source/en/2-user_guide/4-tasks/4-manip_loco.md",
+      "sha256": "b122cc0200adee08a34d05241d8416c17ad5978e925e12ec2362b4e0ddf7ea70"
+    },
+    "docs/en/8-manipulation/2-manip_loco.md": {
+      "source": "UniLab/docs/sphinx/source/en/2-user_guide/8-manipulation/2-manip_loco.md",
+      "sha256": "b3e7bcaea97cafe9a291fc0a0ff4672016e5f6fd5601381704a20baad2bb10dd"
+    },
+    "docs/en/2-algorithms/6-him_ppo.md": {
+      "source": "UniLab/docs/sphinx/source/en/2-user_guide/2-algorithms/6-him_ppo.md",
+      "sha256": "6e83dec061f53898619bcb91668faac2fafca34b89c63e7fbbe7b4bc5aac8a67"
+    },
+    "docs/zh_CN/4-tasks/4-manip_loco.md": {
+      "source": "UniLab/docs/sphinx/source/zh_CN/2-user_guide/4-tasks/4-manip_loco.md",
+      "sha256": "7bcf05a304ae7702cdfcfaa183aec4227d355584c314d35d265c362e6ac60422"
+    },
+    "docs/zh_CN/8-manipulation/2-manip_loco.md": {
+      "source": "UniLab/docs/sphinx/source/zh_CN/2-user_guide/8-manipulation/2-manip_loco.md",
+      "sha256": "4fe2e61e9d246b5fed8bdadf753df06a5359c72b02daddf4c5cfa43972b32a80"
+    },
+    "docs/zh_CN/2-algorithms/6-him_ppo.md": {
+      "source": "UniLab/docs/sphinx/source/zh_CN/2-user_guide/2-algorithms/6-him_ppo.md",
+      "sha256": "92c8bdffe8718c784011ce9e537eb99858d21d7281ea17e0411b0b3886c8477a"
+    },
+    "LICENSE": {
+      "source": "UniLab/LICENSE",
+      "sha256": "2191d05c6ee7c145480916b745bd020484adb61653be943c43cff10bc22927a1"
+    },
+    "src/legged_manipulation_unilab/tasks/common/base.py": {
+      "source": "UniLab/src/unilab/tasks/locomotion/common/base.py",
+      "sha256": "5f45bd2d1a600244fd712243bffce8ca8c2ddd997481f1a16ba74153e2205f4f"
+    },
+    "src/legged_manipulation_unilab/tasks/common/commands.py": {
+      "source": "UniLab/src/unilab/tasks/locomotion/common/commands.py",
+      "sha256": "31b3fecae711711a1b55ab3380d73874511e88ba85ef5e858383df5b43fdfbe5"
+    },
+    "src/legged_manipulation_unilab/tasks/common/domain_rand.py": {
+      "source": "UniLab/src/unilab/tasks/locomotion/common/domain_rand.py",
+      "sha256": "30a03126e33f9042a3ade7bece08967fdb29f85d01cf8899535d94f63430f888"
+    },
+    "src/legged_manipulation_unilab/tasks/common/dr_provider.py": {
+      "source": "UniLab/src/unilab/tasks/locomotion/common/dr_provider.py",
+      "sha256": "66c2ffb6daf7f049bef06846d2f9861412049da84fb1caf6e63179df2b72a70b"
+    },
+    "src/legged_manipulation_unilab/tasks/common/rewards.py": {
+      "source": "UniLab/src/unilab/tasks/locomotion/common/rewards.py",
+      "sha256": "2ce0a92db20fab5eb0fe724e2a499f13d3f6474ad7f73353d0c4cf8527e3bbec"
+    },
+    "src/legged_manipulation_unilab/tasks/geometry.py": {
+      "source": "UniLab/src/unilab/utils/geometry.py",
+      "sha256": "1c1151ddaeb03386e775ab6245e815714d8e14b605083f988038c1d8f754fb59",
+      "symbols": [
+        "np_quat_normalize",
+        "np_spherical_to_cartesian",
+        "np_cartesian_to_spherical",
+        "np_quat_orientation_error_local"
+      ]
+    },
+    "src/legged_manipulation_unilab/tasks/common/dr_utils.py": {
+      "source": "UniLab/src/unilab/dr/dr_utils.py",
+      "sha256": "f9de2090fe54c4dd0eec5138bc5fe17197436bbb22d8b576e7b2c4241f430435",
+      "symbols": [
+        "zero_actions",
+        "build_interval_push_plan",
+        "validate_interval_push_support"
+      ]
+    }
+  }
+}
