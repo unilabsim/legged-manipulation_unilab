@@ -1,0 +1,90 @@
+[build-system]
+requires = ["uv_build>=0.12.1,<0.13"]
+build-backend = "uv_build"
+
+[project]
+name = "legged-manipulation-unilab"
+version = "0.1.0"
+description = "Go2 arm locomotion and manipulation tasks with PPO and HIM-PPO"
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+license = "Apache-2.0 AND BSD-3-Clause"
+license-files = ["LICENSE", "LICENSES/*"]
+dependencies = [
+    "unilab @ git+https://github.com/Motphys/UniLab.git@132c7056dcba3796955d54e568072099b8c9bd39",
+    "unilab-rl @ git+https://github.com/unilabsim/unilab_rl.git@e7a6c3c01798ec55254ca77d63d283d9d3394b4a",
+    "numpy", "torch>=2.8", "tensordict", "hydra-core>=1.3",
+    "filelock", "tensorboard",
+]
+
+[project.optional-dependencies]
+mujoco = ["unilab[mujoco] @ git+https://github.com/Motphys/UniLab.git@132c7056dcba3796955d54e568072099b8c9bd39"]
+motrix = ["unilab[motrix] @ git+https://github.com/Motphys/UniLab.git@132c7056dcba3796955d54e568072099b8c9bd39"]
+export = ["onnx", "onnxscript", "onnxruntime"]
+
+[project.scripts]
+legged-train = "legged_manipulation_unilab.cli:train_main"
+legged-eval = "legged_manipulation_unilab.cli:eval_main"
+legged-assets = "legged_manipulation_unilab.assets:main"
+legged-ik = "legged_manipulation_unilab.tools.play_go2_arm_ik_only:main"
+legged-diagnose-ik = "legged_manipulation_unilab.tools.diagnose_go2_arm_ik:main"
+legged-calibrate = "legged_manipulation_unilab.tools.calibrate_go2_arm_ee_orientation:main"
+legged-benchmark-jacobian = "legged_manipulation_unilab.tools.benchmark_site_jacobian:main"
+
+[project.entry-points."unilab.tasks"]
+legged_manipulation = "legged_manipulation_unilab.tasks"
+
+[project.urls]
+Repository = "https://github.com/unilabsim/legged-manipulation_unilab"
+
+[dependency-groups]
+dev = ["pytest", "ruff", "mypy", "pyright==1.1.408"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501", "E402"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--tb=short"
+markers = ["slow: physics integration tests"]
+
+[tool.mypy]
+ignore_missing_imports = true
+no_site_packages = true
+
+[tool.pyright]
+pythonVersion = "3.10"
+venvPath = "."
+venv = ".venv"
+include = ["src/legged_manipulation_unilab"]
+# These migrated diagnostic tools call native MuJoCo APIs whose installed
+# stubs omit the generated exports. They are exercised by runtime smoke tests.
+exclude = ["src/legged_manipulation_unilab/tools"]
+
+[tool.uv.build-backend]
+module-name = "legged_manipulation_unilab"
+
+[tool.uv]
+constraint-dependencies = ["torch==2.8.0; sys_platform != 'linux' or platform_machine != 'aarch64'"]
+
+[tool.uv.sources]
+torch = [
+    { index = "r2-cu130", marker = "sys_platform=='linux' and platform_machine=='aarch64'" },
+    { index = "pytorch-cu128", marker = "sys_platform=='linux' and platform_machine=='x86_64'" },
+    { index = "pytorch-cu128", marker = "sys_platform=='win32'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[[tool.uv.index]]
+name = "r2-cu130"
+url = "https://download-r2.pytorch.org/whl/cu130"
+explicit = true
