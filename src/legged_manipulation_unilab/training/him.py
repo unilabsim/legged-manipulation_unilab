@@ -168,11 +168,6 @@ def play_him_ppo(cfg: DictConfig, device: str) -> str | None:
                     "cam_tracking_env_idx": getattr(cfg.training, "cam_tracking_env_idx", 0),
                     "cam_tracking_extra_envs": getattr(cfg.training, "cam_tracking_extra_envs", 2),
                 },
-                extra_data_getter=(
-                    (lambda: getattr(env, "curr_ee_goal_world", None))
-                    if hasattr(env, "curr_ee_goal_world")
-                    else None
-                ),
             )
         print("Done.")
         return str(output_video)

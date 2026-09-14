@@ -11,8 +11,12 @@ The task owner is `src/legged_manipulation_unilab/conf/ppo_him/task/go2_arm_mani
 
 ```bash
 uv run legged-train --algo him_ppo --sim mujoco training.log_root=./logs/him-mujoco training.no_play=true
-uv run legged-eval --algo him_ppo --sim mujoco training.log_root=./logs/eval-him algo.load_run=/absolute/path/to/him/run algo.checkpoint=-1
+uv run legged-eval --algo him_ppo --sim mujoco --run logs/him-mujoco/Go2ArmManipLoco
 ```
+
+`--run` accepts the parent log group, one run directory, or one checkpoint
+file; it selects the latest checkpoint by default. Use `--checkpoint 100` to
+select an earlier checkpoint.
 
 Replace the absolute path with the run directory containing your checkpoint.
 With the export extra installed, add `--export` during evaluation to export the policy.

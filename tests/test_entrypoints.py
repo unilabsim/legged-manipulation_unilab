@@ -162,7 +162,7 @@ def test_ppo_go2_arm_manip_loco_motrix_preserves_backend_overrides():
     assert cfg.training.sim_backend == "motrix"
     assert cfg.algo.num_envs == 4096
     assert cfg.algo.max_iterations == 3000
-    assert cfg.reward.scales.tracking_lin_vel == pytest.approx(2.0)
+    assert cfg.reward.tracking_lin_vel.weight == pytest.approx(2.0)
     assert cfg.env.domain_rand.randomize_dof_armature is False
     assert cfg.env.domain_rand.randomize_kp is False
     assert cfg.env.domain_rand.randomize_kd is False

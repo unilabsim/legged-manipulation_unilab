@@ -42,13 +42,20 @@ uv run legged-train --algo him_ppo --sim mujoco training.log_root=./logs/him-muj
 
 The task defaults to `go2_arm_manip_loco`. Append Hydra overrides for tuning;
 `--cfg` prints the composed configuration. Select the backend with `--sim`.
-For evaluation, replace the absolute example path with the run directory
-containing your checkpoint; `algo.checkpoint=-1` selects its latest checkpoint.
+
+For evaluation, pass the parent log group and let `--run` select the latest
+training run and checkpoint:
 
 ```bash
-uv run legged-eval --algo ppo --sim mujoco training.log_root=./logs/eval-ppo algo.load_run=/absolute/path/to/ppo/run algo.checkpoint=-1
-uv run legged-eval --algo him_ppo --sim mujoco training.log_root=./logs/eval-him algo.load_run=/absolute/path/to/him/run algo.checkpoint=-1
+uv run legged-eval --algo ppo --sim mujoco --run logs/ppo-mujoco/Go2ArmManipLoco
+uv run legged-eval --algo him_ppo --sim mujoco --run logs/him-mujoco/Go2ArmManipLoco
 ```
+
+`--run` also accepts one training run directory or a `model_*.pt` file. Select
+another checkpoint with `--checkpoint 100`. On a headless machine, prefix the
+command with `MUJOCO_GL=egl`. A checkpoint trained with a different
+policy/config contract fails the sim2sim guard; train a fresh run after changing
+those settings.
 
 HIM-PPO evaluation accepts `--export` with the export extra installed.
 See [HIM-PPO](docs/en/2-algorithms/6-him_ppo.md) for history dimensions and

@@ -12,6 +12,22 @@ from omegaconf import DictConfig, OmegaConf
 CONF_ROOT = Path(__file__).resolve().parent / "conf"
 
 
+def _resolve_eval_run(value: str | Path) -> Path:
+    """Resolve a checkpoint file, training run directory, or parent log group."""
+    path = Path(value).expanduser().resolve()
+    if path.is_file():
+        return path
+    if not path.is_dir():
+        raise ValueError(f"Eval run does not exist: {path}")
+    if list(path.glob("model_*.pt")):
+        return path
+
+    runs = [run for run in sorted(path.iterdir()) if run.is_dir() and list(run.glob("model_*.pt"))]
+    if runs:
+        return runs[-1]
+    raise ValueError(f"No model_*.pt checkpoints found under {path}")
+
+
 def compose_config(algo: str, sim: str, overrides: list[str]) -> DictConfig:
     group = "ppo_him" if algo == "him_ppo" else "ppo"
     owner = f"go2_arm_manip_loco/{sim}"
@@ -37,7 +53,31 @@ def _main(*, play: bool, argv: list[str] | None = None) -> None:
         "--cfg", action="store_true", help="Print composed config without loading assets"
     )
     parser.add_argument("--export", action="store_true", help="Export checkpoint during eval")
+    parser.add_argument(
+        "--run",
+        metavar="RUN",
+        help=(
+            "evaluation only: checkpoint file, training run directory, or parent log "
+            "group; uses the latest checkpoint by default"
+        ),
+    )
+    parser.add_argument(
+        "--checkpoint",
+        metavar="CHECKPOINT",
+        help="evaluation only: checkpoint iteration (for example 150) or filename",
+    )
     args, overrides = parser.parse_known_args(argv)
+    if not play and (args.run is not None or args.checkpoint is not None):
+        parser.error("--run and --checkpoint are evaluation-only options")
+    for option, key in (("--run", "algo.load_run"), ("--checkpoint", "algo.checkpoint")):
+        if getattr(args, option[2:]) is not None and any(
+            override.lstrip("+~").split("=", 1)[0] == key for override in overrides
+        ):
+            parser.error(f"use {option} or the {key} Hydra override, not both")
+    if args.run is not None:
+        overrides.append(f"algo.load_run={_resolve_eval_run(args.run)}")
+    if args.checkpoint is not None:
+        overrides.append(f"algo.checkpoint={args.checkpoint}")
     cfg = compose_config(args.algo, args.sim, overrides)
     cfg.training.play_only = play
     if args.cfg:

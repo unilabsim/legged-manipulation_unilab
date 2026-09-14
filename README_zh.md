@@ -41,13 +41,18 @@ uv run legged-train --algo him_ppo --sim mujoco training.log_root=./logs/him-muj
 
 任务默认为 `go2_arm_manip_loco`。在命令后追加 Hydra override 调参；
 `--cfg` 打印组合后的配置。使用 `--sim` 选择后端。
-回放时，将以下绝对路径替换为包含 checkpoint 的实际 run 目录；
-`algo.checkpoint=-1` 选择该目录中最新的 checkpoint。
+
+评估时把 `--run` 指向日志父目录，命令会自动选择最新的训练 run 和 checkpoint：
 
 ```bash
-uv run legged-eval --algo ppo --sim mujoco training.log_root=./logs/eval-ppo algo.load_run=/absolute/path/to/ppo/run algo.checkpoint=-1
-uv run legged-eval --algo him_ppo --sim mujoco training.log_root=./logs/eval-him algo.load_run=/absolute/path/to/him/run algo.checkpoint=-1
+uv run legged-eval --algo ppo --sim mujoco --run logs/ppo-mujoco/Go2ArmManipLoco
+uv run legged-eval --algo him_ppo --sim mujoco --run logs/him-mujoco/Go2ArmManipLoco
 ```
+
+`--run` 也接受单个训练 run 目录或 `model_*.pt` 文件。用
+`--checkpoint 100` 选择指定 checkpoint。无显示环境时加
+`MUJOCO_GL=egl`。如果 checkpoint 与当前策略/配置契约不一致，sim2sim 检查会
+拒绝加载；修改这些设置后请重新训练。
 
 安装 export extra 后，HIM-PPO 回放支持 `--export`。
 观测历史维度和默认机械臂训练阶段见 [HIM-PPO](docs/zh_CN/2-algorithms/6-him_ppo.md)。

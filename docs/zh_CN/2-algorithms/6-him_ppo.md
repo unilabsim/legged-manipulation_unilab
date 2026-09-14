@@ -11,8 +11,11 @@ HIM-PPO 由本包的 `algos/him_ppo/` 与 `training/him.py` 实现，
 
 ```bash
 uv run legged-train --algo him_ppo --sim mujoco training.log_root=./logs/him-mujoco training.no_play=true
-uv run legged-eval --algo him_ppo --sim mujoco training.log_root=./logs/eval-him algo.load_run=/absolute/path/to/him/run algo.checkpoint=-1
+uv run legged-eval --algo him_ppo --sim mujoco --run logs/him-mujoco/Go2ArmManipLoco
 ```
+
+`--run` 可以指向日志父目录、单个 run 目录或 checkpoint 文件；默认选择最新
+checkpoint。用 `--checkpoint 100` 选择指定 checkpoint。
 
 将绝对路径替换为实际 checkpoint 所在的 run 目录。
 安装 export extra 后，可在回放命令中增加 `--export` 导出策略。
