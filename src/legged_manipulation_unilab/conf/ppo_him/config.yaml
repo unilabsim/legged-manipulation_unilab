@@ -2,6 +2,7 @@ defaults:
   - _self_
   - task: go2_arm_manip_loco/mujoco
 
+reward: {}
 algo:
   algo_log_name: ppo_him
   seed: 1
@@ -79,6 +80,7 @@ training:
     output_dir: null
 
 env:
+  reward_parameters: {}
   post_step_forward_sensor: false
 
 hydra:

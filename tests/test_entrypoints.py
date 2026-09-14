@@ -162,10 +162,19 @@ def test_ppo_go2_arm_manip_loco_motrix_preserves_backend_overrides():
     assert cfg.training.sim_backend == "motrix"
     assert cfg.algo.num_envs == 4096
     assert cfg.algo.max_iterations == 3000
-    assert cfg.reward.scales.tracking_lin_vel == pytest.approx(2.0)
+    assert cfg.reward.tracking_lin_vel.weight == pytest.approx(2.0)
     assert cfg.env.domain_rand.randomize_dof_armature is False
     assert cfg.env.domain_rand.randomize_kp is False
     assert cfg.env.domain_rand.randomize_kd is False
+
+
+def test_ppo_go2_arm_manip_loco_mujoco_uses_full_training_recipe():
+    cfg = compose_config("ppo", "mujoco", [])
+
+    assert cfg.training.task_name == "Go2ArmManipLoco"
+    assert cfg.training.sim_backend == "mujoco"
+    assert cfg.algo.num_envs == 4096
+    assert cfg.algo.max_iterations == 3000
 
 
 def test_site_jacobian_benchmark_imports_with_mujoco_stub() -> None:

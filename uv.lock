@@ -1117,6 +1117,7 @@ dependencies = [
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
     { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "rsl-rl-lib" },
     { name = "tensorboard" },
     { name = "tensordict" },
     { name = "torch", version = "2.8.0", source = { registry = "https://pypi.org/simple" }, marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (sys_platform != 'linux' and sys_platform != 'win32')" },
@@ -1156,16 +1157,17 @@ requires-dist = [
     { name = "onnx", marker = "extra == 'export'" },
     { name = "onnxruntime", marker = "extra == 'export'" },
     { name = "onnxscript", marker = "extra == 'export'" },
+    { name = "rsl-rl-lib", git = "https://github.com/leggedrobotics/rsl_rl.git?rev=89869d8ccbc560d365026fb0cb127f93cbb3fb28" },
     { name = "tensorboard" },
     { name = "tensordict" },
     { name = "torch", marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (sys_platform != 'linux' and sys_platform != 'win32')", specifier = ">=2.8" },
     { name = "torch", marker = "platform_machine == 'aarch64' and sys_platform == 'linux'", specifier = ">=2.8", index = "https://download-r2.pytorch.org/whl/cu130" },
     { name = "torch", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'", specifier = ">=2.8", index = "https://download.pytorch.org/whl/cu128" },
     { name = "torch", marker = "sys_platform == 'win32'", specifier = ">=2.8", index = "https://download.pytorch.org/whl/cu128" },
-    { name = "unilab", git = "https://github.com/Motphys/UniLab.git?rev=132c7056dcba3796955d54e568072099b8c9bd39" },
-    { name = "unilab", extras = ["motrix"], marker = "extra == 'motrix'", git = "https://github.com/Motphys/UniLab.git?rev=132c7056dcba3796955d54e568072099b8c9bd39" },
-    { name = "unilab", extras = ["mujoco"], marker = "extra == 'mujoco'", git = "https://github.com/Motphys/UniLab.git?rev=132c7056dcba3796955d54e568072099b8c9bd39" },
-    { name = "unilab-rl", git = "https://github.com/unilabsim/unilab_rl.git?rev=e7a6c3c01798ec55254ca77d63d283d9d3394b4a" },
+    { name = "unilab", git = "https://github.com/Motphys/UniLab.git?rev=09826339cca34f55f21edc2783669dfc9e9a59fd" },
+    { name = "unilab", extras = ["motrix"], marker = "extra == 'motrix'", git = "https://github.com/Motphys/UniLab.git?rev=09826339cca34f55f21edc2783669dfc9e9a59fd" },
+    { name = "unilab", extras = ["mujoco"], marker = "extra == 'mujoco'", git = "https://github.com/Motphys/UniLab.git?rev=09826339cca34f55f21edc2783669dfc9e9a59fd" },
+    { name = "unilab-rl", git = "https://github.com/unilabsim/unilab_rl.git?rev=79418e0cbff7b95fe6e49709b194454701ba20fa" },
 ]
 provides-extras = ["mujoco", "motrix", "export"]
 
@@ -1524,6 +1526,32 @@ wheels = [
 ]
 
 [[package]]
+name = "mjbatch-uni"
+version = "0.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "mujoco" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
+    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/fa/d7/0353b4cff9aa3dbc87ba194514f27b11a81155df684c2259adde8b3f6d7b/mjbatch_uni-0.2.0.tar.gz", hash = "sha256:0e883d307f33636daaa8ed92f729c67c2ca67a5ae54b12114ef40baebf052006", size = 38231, upload-time = "2026-09-13T15:10:57.024Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bd/9c/29ded200f34bf03dbca7302c99832bcff15c2557cd11c5208612f146e4aa/mjbatch_uni-0.2.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:1bac2a8fc41cf61f80fbba5dc4c9690bb78ebc51faafe71f6205b60ebd9eda1f", size = 150198, upload-time = "2026-09-13T15:10:41.899Z" },
+    { url = "https://files.pythonhosted.org/packages/c5/77/f3adc58f3acb7e5369865344e3fd2e165c29d6a4731dcdbb991c89868e2a/mjbatch_uni-0.2.0-cp310-cp310-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:3b4175221ccd6c50f98456f81e5f52a7709f280275e160c1341d8a64593dbf37", size = 174727, upload-time = "2026-09-13T15:10:43.174Z" },
+    { url = "https://files.pythonhosted.org/packages/19/84/be3d64c4f4e40494e83948ea0a08eb00319da722d01d6bbfe6c770e97588/mjbatch_uni-0.2.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:ca1da6c406959c7b3c09f5d30e20edf851f091c1b0f139cb57ab1eb69f8e40bc", size = 185121, upload-time = "2026-09-13T15:10:44.506Z" },
+    { url = "https://files.pythonhosted.org/packages/fd/d9/5dba00afd7f6784740144de079cfde14ef1731533a09cbafc5bec7f945cc/mjbatch_uni-0.2.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:f72e7bccfbd8e0d4f744bfc223265665f32b4e32b3a989f7f03123f811729a18", size = 149779, upload-time = "2026-09-13T15:10:45.931Z" },
+    { url = "https://files.pythonhosted.org/packages/f7/55/26240fc42e3fe4f8ffc6ea6605ef72de130c7196bc69bd158527edb1f6de/mjbatch_uni-0.2.0-cp311-cp311-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:84ca4865dbcfa932cbd4e905d8c15b41fe0a8b8216761a06f9f3668bf0d92256", size = 174360, upload-time = "2026-09-13T15:10:47.138Z" },
+    { url = "https://files.pythonhosted.org/packages/ee/6b/e066bad7afb095051f1dbd9aa500ca62977069ef880109757e9ff12376d5/mjbatch_uni-0.2.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:690db3ca8564c154341306c4167123dff1125c4cd334f37b7ed6e5e321b3540f", size = 184863, upload-time = "2026-09-13T15:10:48.513Z" },
+    { url = "https://files.pythonhosted.org/packages/36/a4/15f256c6d3a33811bc4bdbce1649ea2d66bdfcb720f0396a4e83b6cd92ea/mjbatch_uni-0.2.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:2ff0c70adf00e19a3878ba4cd7d2549137a60ebe60a6709a92c54ad00fe41cd4", size = 148973, upload-time = "2026-09-13T15:10:49.854Z" },
+    { url = "https://files.pythonhosted.org/packages/56/fe/09a9cac6b6f91b62c23c943e504ad3d2947d868a7c512bca66d59fdd88d9/mjbatch_uni-0.2.0-cp312-cp312-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:090ec1d0aa4e6abdc6cb761fe447e0cd31fba62888ed2a6897b2557ff7f69543", size = 173190, upload-time = "2026-09-13T15:10:50.987Z" },
+    { url = "https://files.pythonhosted.org/packages/f6/13/65047e2fd0863133f140ec7f195ec915c88c3502f9ac785ce65ded58951f/mjbatch_uni-0.2.0-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:b9b9a564773698faf37ad89560cb071b50cbef4bc81743cca39602dc2e4aa512", size = 184451, upload-time = "2026-09-13T15:10:52.199Z" },
+    { url = "https://files.pythonhosted.org/packages/6e/cf/b51af8bcd2b50b0c5b3497fac1bb673f3e28bccf7a2808bbb2d55a9ee88f/mjbatch_uni-0.2.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:5431238c5ca50be35c7efec5b3e342cd8ec450a0855a43d27aec9a277c485be6", size = 149034, upload-time = "2026-09-13T15:10:53.481Z" },
+    { url = "https://files.pythonhosted.org/packages/a0/f2/8a2871c06b987b349e3e18689ce46ca952538be2ad69d34a2274e74db98b/mjbatch_uni-0.2.0-cp313-cp313-manylinux_2_26_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:6a8a4be2acfd29630f133fa65f742c16b29799a3fd3069133fb54434cf29a7ea", size = 173127, upload-time = "2026-09-13T15:10:54.633Z" },
+    { url = "https://files.pythonhosted.org/packages/18/48/e8d64f0e00c56e36b5ed9351e7e62129c83bacff19bbe55d53844aefa89e/mjbatch_uni-0.2.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:f9f40fcae35da5d8a29448bdfa62fac70c9b69440e10056f3d1e3061b400c9c9", size = 184436, upload-time = "2026-09-13T15:10:55.814Z" },
+]
+
+[[package]]
 name = "ml-dtypes"
 version = "0.6.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1625,32 +1653,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/47/73/4cbe741986ed86f13e86ad92a11de870bdec4979eaafcbc7ef3164680260/mujoco-3.11.0-cp313-cp313-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:b1ea2ed1d20b7cca55fc1e0257f2d4f6ab6e83855f669530fb3f55c85da80aac", size = 17704381, upload-time = "2026-07-28T01:23:00.158Z" },
     { url = "https://files.pythonhosted.org/packages/90/2e/843071e21831fa5ef4029de6874789f9fd32f340d42fced383757c484bdd/mujoco-3.11.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:3379c36b508474127b08e51e77942c493c2f1d7215b425e3b95de08dcba662e0", size = 18868301, upload-time = "2026-07-28T01:23:03.054Z" },
     { url = "https://files.pythonhosted.org/packages/bb/25/2a518a33b359b0798a9e8b55f30a4c9ab0cadd0cab8d85872ff9da6ca309/mujoco-3.11.0-cp313-cp313-win_amd64.whl", hash = "sha256:d48b4a18d409ce4c746f32b3b402a8419b7450d9a89de68b81d73a3ef333d0e4", size = 15792231, upload-time = "2026-07-28T01:23:05.798Z" },
-]
-
-[[package]]
-name = "mujoco-uni-runtime"
-version = "0.5.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "mujoco" },
-    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
-    { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e9/ce/476cf50ec4f76b86b855b861e01f106b330c7d62a61574655cfe90336a07/mujoco_uni_runtime-0.5.0.tar.gz", hash = "sha256:a0c774da3607b6111d7c91155867377f9eb6d91ab6e0bbb97f15247df1ead9d7", size = 55656, upload-time = "2026-09-05T19:29:40.265Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/68/ee/61348995acb39aef26b5a1d9af57d61d6a2d042002063ab1b7bf28b0fdc8/mujoco_uni_runtime-0.5.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:755146199fcf8958e5dd3b74c32d93419502a6dd89751c445c5fe70cf68a0847", size = 401266, upload-time = "2026-09-05T19:29:23.366Z" },
-    { url = "https://files.pythonhosted.org/packages/87/23/7ff0ccefecbbcfbaffce7e5959ec35023c354813546424eca4ccdc12cabd/mujoco_uni_runtime-0.5.0-cp310-cp310-manylinux_2_35_aarch64.whl", hash = "sha256:3a4d8c9471298b0c30a5526d49fe623aa8a8682001e208ea4bd3421318a9de3d", size = 2332548, upload-time = "2026-09-05T19:29:24.831Z" },
-    { url = "https://files.pythonhosted.org/packages/d8/ed/c438dd170d7a6bbbbbc31cf6188ec94bd6e8cdc384e1e1619c6c24e27d7d/mujoco_uni_runtime-0.5.0-cp310-cp310-manylinux_2_35_x86_64.whl", hash = "sha256:d00015521610a39a473a15ef350f015914f1b82372a4eae1f580934be44bbb94", size = 2392108, upload-time = "2026-09-05T19:29:26.258Z" },
-    { url = "https://files.pythonhosted.org/packages/45/a9/3cc6a7e31140bb48749a64165698358af4422a8b948293397be4621b81a9/mujoco_uni_runtime-0.5.0-cp311-cp311-macosx_10_9_universal2.whl", hash = "sha256:f86a5bc75e1758b05816777b41bb3232015ce1a26d1f63bdb2da4f3b7ae87030", size = 403670, upload-time = "2026-09-05T19:29:27.892Z" },
-    { url = "https://files.pythonhosted.org/packages/de/ed/a66e735512317bd135b2b9c806a882ff9f01f8503ce53b59874a6f4c685e/mujoco_uni_runtime-0.5.0-cp311-cp311-manylinux_2_35_aarch64.whl", hash = "sha256:746caa1ed23237ba4a0e2d7d7afb6afa0e3c6223b8000f22bc0c6da64a538fef", size = 2346314, upload-time = "2026-09-05T19:29:29.198Z" },
-    { url = "https://files.pythonhosted.org/packages/46/ad/f8edda197f41b2dee678faca8964cf307e6bfbdc7b2bea6b907f5bf5fdf8/mujoco_uni_runtime-0.5.0-cp311-cp311-manylinux_2_35_x86_64.whl", hash = "sha256:3ccc49063dc34f3d657ffa7afe12c62d6a88615edcb2cc21b60ec59272dea3e3", size = 2406269, upload-time = "2026-09-05T19:29:30.476Z" },
-    { url = "https://files.pythonhosted.org/packages/dc/fa/fe3e5173e804ac4eb1acbbd0fc9df81fe079fab7ae3d9813cd92cdf79b23/mujoco_uni_runtime-0.5.0-cp312-cp312-macosx_10_13_universal2.whl", hash = "sha256:9597385aaafc77ae7d6f89aedfb677ad9f67a0874afd5962330c08cebbad56b6", size = 396860, upload-time = "2026-09-05T19:29:32.052Z" },
-    { url = "https://files.pythonhosted.org/packages/7d/9d/2b14e54f2a0c70fdd95091f2648f9c50203bc87ac238370f5f51f9dac170/mujoco_uni_runtime-0.5.0-cp312-cp312-manylinux_2_35_aarch64.whl", hash = "sha256:61539c6287ca62600836062aefeb458e550f4ea6782d8f24e501027824aac546", size = 2366290, upload-time = "2026-09-05T19:29:33.248Z" },
-    { url = "https://files.pythonhosted.org/packages/0a/25/7633b376c3cadffd35420f7f13a1a35ddfed86cae8842cf1206c3555b516/mujoco_uni_runtime-0.5.0-cp312-cp312-manylinux_2_35_x86_64.whl", hash = "sha256:a0117a107319661dccc6657e3cc0d2545f58eb0f9b0c725acba1d4047f507847", size = 2427155, upload-time = "2026-09-05T19:29:34.677Z" },
-    { url = "https://files.pythonhosted.org/packages/de/33/c4c2d2fb73b43c8a4e331fe065d4f49f1ae70b17d4327255ccb733f917d9/mujoco_uni_runtime-0.5.0-cp313-cp313-macosx_10_13_universal2.whl", hash = "sha256:1831182949ace71f48e9ee7c9ef7406b4b1ef2bba9884c87e4932ba92862041b", size = 396959, upload-time = "2026-09-05T19:29:36.208Z" },
-    { url = "https://files.pythonhosted.org/packages/e7/1c/ff0cb5a53311f94200a1ecd9645d9e48442b994bb866a04e5c52f3f28537/mujoco_uni_runtime-0.5.0-cp313-cp313-manylinux_2_35_aarch64.whl", hash = "sha256:9d22628e59ae205610e1eeba2429c21801cf8ea25d99de6d66733621c44086c2", size = 2365046, upload-time = "2026-09-05T19:29:37.558Z" },
-    { url = "https://files.pythonhosted.org/packages/56/83/df50eae1b379198bf0c2c58d36f768afe30db7dad823b9210d21c6399eb0/mujoco_uni_runtime-0.5.0-cp313-cp313-manylinux_2_35_x86_64.whl", hash = "sha256:84f1c81819752622cb794458a731d8b1b98ec2a589380fedf55999b3fe89faed", size = 2427855, upload-time = "2026-09-05T19:29:38.944Z" },
 ]
 
 [[package]]
@@ -2650,15 +2652,6 @@ wheels = [
 ]
 
 [[package]]
-name = "pybind11"
-version = "3.1.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/76/f3/95b0f40b31df41dbfe6bb0857419c9442c15839cbac4796f1c26ae0b6081/pybind11-3.1.0.tar.gz", hash = "sha256:a1cc06b524ab3edca51f8ad3895f9c4fa20b8b19283173dff4ae781449dc9639", size = 603746, upload-time = "2026-08-06T23:33:00.675Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/33/fd/8762f7ee3e4e4be6d1d846cffb4916dd9bb02b2f800d3603718a0efe494c/pybind11-3.1.0-py3-none-any.whl", hash = "sha256:b8488090f8acffbcb6b5d6a85571a6827a0a2981ffb75e5a0b27b87c4a6b7dd0", size = 319402, upload-time = "2026-08-06T23:32:59.047Z" },
-]
-
-[[package]]
 name = "pydantic"
 version = "2.13.5"
 source = { registry = "https://pypi.org/simple" }
@@ -2924,7 +2917,7 @@ wheels = [
 [[package]]
 name = "rsl-rl-lib"
 version = "5.5.0"
-source = { registry = "https://pypi.org/simple" }
+source = { git = "https://github.com/leggedrobotics/rsl_rl.git?rev=89869d8ccbc560d365026fb0cb127f93cbb3fb28#89869d8ccbc560d365026fb0cb127f93cbb3fb28" }
 dependencies = [
     { name = "gitpython" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -2937,10 +2930,6 @@ dependencies = [
     { name = "torch", version = "2.8.0", source = { registry = "https://pypi.org/simple" }, marker = "(platform_machine != 'aarch64' and platform_machine != 'x86_64' and sys_platform == 'linux') or (sys_platform != 'linux' and sys_platform != 'win32')" },
     { name = "torch", version = "2.8.0+cu128", source = { registry = "https://download.pytorch.org/whl/cu128" }, marker = "(platform_machine == 'x86_64' and sys_platform == 'linux') or sys_platform == 'win32'" },
     { name = "torch", version = "2.11.0+cu130", source = { registry = "https://download-r2.pytorch.org/whl/cu130" }, marker = "platform_machine == 'aarch64' and sys_platform == 'linux'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/47/4d/9e015172774bc07e14f72b82bbc9fd9ab9ac65cfbdfe70844ba344ed3c43/rsl_rl_lib-5.5.0.tar.gz", hash = "sha256:26b5f2e8ee6f2d5bda38d4cc5e5b6420aa60cdbf108b1c131ac4a008bb29d943", size = 67466, upload-time = "2026-08-27T07:13:02.614Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/4e/55/bb460ef8188f4cef79df2bd0103897a87aa6cd81018bb696fe7afe22f2b0/rsl_rl_lib-5.5.0-py3-none-any.whl", hash = "sha256:95b716da32e19055596f1d3bcf24f02e13bdadf4b9ffffacc22a832239e60255", size = 99594, upload-time = "2026-08-27T07:13:01.164Z" },
 ]
 
 [[package]]
@@ -3346,8 +3335,8 @@ wheels = [
 
 [[package]]
 name = "unilab"
-version = "1.1.0"
-source = { git = "https://github.com/Motphys/UniLab.git?rev=132c7056dcba3796955d54e568072099b8c9bd39#132c7056dcba3796955d54e568072099b8c9bd39" }
+version = "1.2.0"
+source = { git = "https://github.com/Motphys/UniLab.git?rev=09826339cca34f55f21edc2783669dfc9e9a59fd#09826339cca34f55f21edc2783669dfc9e9a59fd" }
 dependencies = [
     { name = "etils", version = "1.13.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "etils", version = "1.14.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
@@ -3387,16 +3376,14 @@ motrix = [
     { name = "motrixsim-core" },
 ]
 mujoco = [
+    { name = "mjbatch-uni" },
     { name = "mujoco" },
-    { name = "mujoco-uni-runtime" },
-    { name = "pybind11" },
-    { name = "wheel" },
 ]
 
 [[package]]
 name = "unilab-rl"
-version = "1.1.0"
-source = { git = "https://github.com/unilabsim/unilab_rl.git?rev=e7a6c3c01798ec55254ca77d63d283d9d3394b4a#e7a6c3c01798ec55254ca77d63d283d9d3394b4a" }
+version = "1.2.0"
+source = { git = "https://github.com/unilabsim/unilab_rl.git?rev=79418e0cbff7b95fe6e49709b194454701ba20fa#79418e0cbff7b95fe6e49709b194454701ba20fa" }
 dependencies = [
     { name = "hydra-core" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -3416,14 +3403,14 @@ dependencies = [
 
 [[package]]
 name = "unisim-core"
-version = "1.1.3"
+version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
     { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4f/00/a3cd085e53e296f9866ba480d4839da1ed5609d48de9de47abd12ef6e17a/unisim_core-1.1.3.tar.gz", hash = "sha256:513cce7de986b3dfbe9f6bb50ca1dc675174f72173a22d2c801ad066cdd42a88", size = 215793, upload-time = "2026-09-06T09:59:39.934Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/0f/f2/eab9d0ec83763cda631e978d805cb451187fb6b4ee6addde636d74ad3c48/unisim_core-1.3.0.tar.gz", hash = "sha256:17ddf3c4b0799d920f565ad30aa545b554e91167be79f1ea8fcbb790a9341463", size = 262820, upload-time = "2026-09-13T15:36:43.82Z" }
 
 [[package]]
 name = "urllib3"
@@ -3482,18 +3469,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/dd/b2/381be8cfdee792dd117872481b6e378f85c957dd7c5bca38897b08f765fd/werkzeug-3.1.8.tar.gz", hash = "sha256:9bad61a4268dac112f1c5cd4630a56ede601b6ed420300677a869083d70a4c44", size = 875852, upload-time = "2026-04-02T18:49:14.268Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/93/8c/2e650f2afeb7ee576912636c23ddb621c91ac6a98e66dc8d29c3c69446e1/werkzeug-3.1.8-py3-none-any.whl", hash = "sha256:63a77fb8892bf28ebc3178683445222aa500e48ebad5ec77b0ad80f8726b1f50", size = 226459, upload-time = "2026-04-02T18:49:12.72Z" },
-]
-
-[[package]]
-name = "wheel"
-version = "0.48.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "packaging" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/d0/20/50ed6bdf27dec98b568a8ae25dc599f35baa3d9709f9e83fd1edb56b9a90/wheel-0.48.0.tar.gz", hash = "sha256:94800765601e9171bf5d58d066e640662842bcedcbab982b2c90787a2c987322", size = 66471, upload-time = "2026-08-11T22:02:27.327Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2e/29/69cfbb602cd91690c55d38ba9fe53e6a7e76a6fa647bf38f19c138d25449/wheel-0.48.0-py3-none-any.whl", hash = "sha256:3217dcc807155e45db462d7ef2431f5ddda0d7273b700d05a67b271ceb1287ab", size = 33320, upload-time = "2026-08-11T22:02:26.1Z" },
 ]
 
 [[package]]

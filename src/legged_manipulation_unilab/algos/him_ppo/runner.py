@@ -4,27 +4,15 @@
 
 from __future__ import annotations
 
-import logging
 import os
 import time
-from collections import deque
 from typing import Any, Callable, cast
 
 import torch
+from rsl_rl.utils.logger import Logger
 
 from legged_manipulation_unilab.algos.him_ppo.actor_critic import HIMActorCritic
 from legged_manipulation_unilab.algos.him_ppo.algorithm import HIMPPO
-
-logger = logging.getLogger(__name__)
-
-
-class _EpisodeStatsBuffer:
-    """Rolling episode-return/length buffers for training summary extraction."""
-
-    def __init__(self) -> None:
-        self.rewbuffer: deque[float] = deque(maxlen=100)
-        self.lenbuffer: deque[float] = deque(maxlen=100)
-        self.tot_timesteps: int = 0
 
 
 class HIMOnPolicyRunner:
@@ -45,12 +33,10 @@ class HIMOnPolicyRunner:
         self.device = device
         self.log_dir = log_dir
         self.current_learning_iteration: int = 0
-        # Keep the established ``runner.logger`` access surface used by the
-        # training entrypoint; this object only owns rolling episode stats.
-        self.logger = _EpisodeStatsBuffer()
 
         # ── Parse config ────────────────────────────────────────────────────
         cfg: dict[str, Any] = dict(train_cfg)
+        self.cfg = cfg
 
         num_one_step_obs = int(cfg["num_one_step_obs"])
         num_actor_history = int(cfg.get("num_actor_history", 1))
@@ -94,19 +80,16 @@ class HIMOnPolicyRunner:
             [num_actions],
         )
 
-        # Per-env episode tracking (independent of env wrapper's counters)
-        self._ep_returns = torch.zeros(env.num_envs, device=device)
-        self._ep_lengths = torch.zeros(env.num_envs, device=device)
-
-        # Tensorboard writer (optional)
-        self._writer: Any = None
-        if log_dir is not None:
-            try:
-                from torch.utils.tensorboard import SummaryWriter  # type: ignore[import-untyped]
-
-                self._writer = SummaryWriter(log_dir=log_dir)
-            except ImportError:
-                pass
+        self.logger = Logger(
+            log_dir=log_dir,
+            cfg=self.cfg,
+            env_cfg=getattr(env, "cfg", {}),
+            num_envs=env.num_envs,
+            is_distributed=False,
+            gpu_world_size=1,
+            gpu_global_rank=0,
+            device=device,
+        )
 
     # ── Public interface ─────────────────────────────────────────────────────
 
@@ -115,6 +98,7 @@ class HIMOnPolicyRunner:
         num_learning_iterations: int,
         init_at_random_ep_len: bool = True,
     ) -> None:
+        self.logger.init_logging_writer()
         obs_td, _ = self.env.reset()
         obs = obs_td["actor"].to(self.device)
         critic_obs = obs_td.get("critic", obs).to(self.device)
@@ -128,10 +112,9 @@ class HIMOnPolicyRunner:
         self.alg.train_mode()
         start_iter = self.current_learning_iteration
         tot_iter = start_iter + num_learning_iterations
-        start_time = time.time()
 
         for it in range(start_iter, tot_iter):
-            infos: dict[str, Any] = {}
+            iteration_start = time.time()
             # ── Rollout collection ───────────────────────────────────────────
             with torch.inference_mode():
                 for _ in range(self.num_steps_per_env):
@@ -140,61 +123,60 @@ class HIMOnPolicyRunner:
 
                     next_obs = obs_td["actor"].to(self.device)
                     next_critic_obs = obs_td.get("critic", next_obs).to(self.device)
-
-                    # Track episode stats before env wrapper resets counters
-                    done_ids = dones.nonzero(as_tuple=False).flatten()
-                    self._ep_returns += rewards.to(self.device)
-                    self._ep_lengths += 1
-                    if len(done_ids) > 0:
-                        for idx in done_ids:
-                            self.logger.rewbuffer.append(float(self._ep_returns[idx]))
-                            self.logger.lenbuffer.append(float(self._ep_lengths[idx]))
-                        self._ep_returns[done_ids] = 0.0
-                        self._ep_lengths[done_ids] = 0.0
+                    rewards = rewards.to(self.device)
+                    dones = dones.to(self.device)
 
                     self.alg.process_env_step(obs_td, rewards, dones, infos)
+                    self.logger.process_env_step(rewards, dones, infos)
                     obs = next_obs
                     critic_obs = next_critic_obs
 
                 self.alg.compute_returns(critic_obs)
 
+            collect_time = time.time() - iteration_start
+            update_start = time.time()
             # ── Update ───────────────────────────────────────────────────────
             value_loss, surrogate_loss, estimation_loss, swap_loss = self.alg.update()
+            learn_time = time.time() - update_start
 
             self.current_learning_iteration = it + 1
-            self.logger.tot_timesteps += self.num_steps_per_env * self.env.num_envs
 
             # ── Logging ──────────────────────────────────────────────────────
-            elapsed = time.time() - start_time
-            self._log_iter(
-                it + 1,
-                tot_iter,
-                value_loss,
-                surrogate_loss,
-                estimation_loss,
-                swap_loss,
-                elapsed,
-                infos,
+            self.logger.log(
+                it=it,
+                start_it=start_iter,
+                total_it=tot_iter,
+                collect_time=collect_time,
+                learn_time=learn_time,
+                loss_dict={
+                    "value": value_loss,
+                    "surrogate": surrogate_loss,
+                    "estimation": estimation_loss,
+                    "swap": swap_loss,
+                },
+                learning_rate=self.alg.learning_rate,
+                action_std=self.actor_critic.action_std,
+                rnd_weight=None,
             )
-            if self._writer is not None:
-                global_step = self.current_learning_iteration
-                self._writer.add_scalar("train/value_loss", value_loss, global_step)
-                self._writer.add_scalar("train/surrogate_loss", surrogate_loss, global_step)
-                self._writer.add_scalar("train/estimation_loss", estimation_loss, global_step)
-                self._writer.add_scalar("train/swap_loss", swap_loss, global_step)
-                for k, v in (infos.get("log") or {}).items():
-                    self._writer.add_scalar(k, v, global_step)
 
             # ── Checkpoint ───────────────────────────────────────────────────
             if (
-                self.log_dir is not None
+                self.logger.writer is not None
                 and self.current_learning_iteration % self.save_interval == 0
             ):
-                self.save(os.path.join(self.log_dir, f"model_{self.current_learning_iteration}.pt"))
+                assert self.logger.log_dir is not None
+                self.save(
+                    os.path.join(self.logger.log_dir, f"model_{self.current_learning_iteration}.pt")
+                )
 
         # Final checkpoint
-        if self.log_dir is not None:
-            self.save(os.path.join(self.log_dir, f"model_{self.current_learning_iteration}.pt"))
+        if self.logger.writer is not None:
+            assert self.logger.log_dir is not None
+            self.save(
+                os.path.join(self.logger.log_dir, f"model_{self.current_learning_iteration}.pt")
+            )
+
+        self.logger.stop_logging_writer()
 
     def save(self, path: str) -> None:
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -207,6 +189,7 @@ class HIMOnPolicyRunner:
             },
             path,
         )
+        self.logger.save_model(path, self.current_learning_iteration)
 
     def load(self, path: str) -> None:
         ckpt = torch.load(path, map_location=self.device, weights_only=True)
@@ -221,8 +204,9 @@ class HIMOnPolicyRunner:
             self.current_learning_iteration = int(ckpt["iteration"])
 
     def close(self) -> None:
-        if self._writer is not None:
-            self._writer.close()
+        close_writer = getattr(self.logger.writer, "close", None)
+        if callable(close_writer):
+            close_writer()
 
     def get_inference_policy(self, device: str | None = None) -> Callable[..., Any]:
         self.actor_critic.eval()
@@ -294,49 +278,3 @@ class HIMOnPolicyRunner:
         traced.save(save_path)
         self.actor_critic.to(orig_device)
         print(f"Exported HIM-PPO policy (JIT) to {save_path}")
-
-    # ── Helpers ──────────────────────────────────────────────────────────────
-
-    def _log_iter(
-        self,
-        it: int,
-        tot: int,
-        value_loss: float,
-        surrogate_loss: float,
-        estimation_loss: float,
-        swap_loss: float,
-        elapsed: float,
-        infos: dict,
-    ) -> None:
-        sep = "-" * 80
-        mean_rew = (
-            sum(self.logger.rewbuffer) / len(self.logger.rewbuffer)
-            if self.logger.rewbuffer
-            else 0.0
-        )
-        mean_len = (
-            sum(self.logger.lenbuffer) / len(self.logger.lenbuffer)
-            if self.logger.lenbuffer
-            else 0.0
-        )
-        time_str = time.strftime("%H:%M:%S", time.gmtime(elapsed))
-        eta = elapsed / it * (tot - it) if it > 0 else 0.0
-        eta_str = time.strftime("%H:%M:%S", time.gmtime(eta))
-        lines = [
-            sep,
-            f"{'Iteration':>40}: {it}/{tot}",
-            f"{'Mean value loss':>40}: {value_loss:.4f}",
-            f"{'Mean surrogate loss':>40}: {surrogate_loss:.4f}",
-            f"{'Mean estimation loss':>40}: {estimation_loss:.4f}",
-            f"{'Mean swap loss':>40}: {swap_loss:.4f}",
-        ]
-        if mean_rew:
-            lines.append(f"{'Mean episode reward':>40}: {mean_rew:.4f}")
-        if mean_len:
-            lines.append(f"{'Mean episode length':>40}: {mean_len:.1f}")
-        for k, v in (infos.get("log") or {}).items():
-            lines.append(f"{k:>40}: {v:.4f}")
-        lines.append(f"{'Time elapsed':>40}: {time_str}")
-        lines.append(f"{'ETA':>40}: {eta_str}")
-        lines.append(sep)
-        logger.info("\n".join(lines))

@@ -12,7 +12,7 @@ from unilab.base import registry
 from unilab.base.registry import ensure_registries
 from unilab.utils.rotation import np_matrix_from_quat
 
-from legged_manipulation_unilab.tasks.go2_arm.manip_loco import RewardConfig
+from legged_manipulation_unilab.tasks.go2_arm.manip_loco import RewardParameters
 
 
 def _parse_vec3(raw: list[float], *, name: str) -> list[float]:
@@ -21,14 +21,8 @@ def _parse_vec3(raw: list[float], *, name: str) -> list[float]:
     return [float(v) for v in raw]
 
 
-def _reward_cfg() -> RewardConfig:
-    return RewardConfig(
-        scales={
-            "tracking_lin_vel": 1.0,
-            "tracking_ang_vel": 0.2,
-            "lin_vel_z": -5.0,
-            "object_distance": 2.0,
-        },
+def _reward_cfg() -> RewardParameters:
+    return RewardParameters(
         tracking_sigma=0.25,
         base_height_target=0.3,
         object_sigma=0.1,
@@ -37,7 +31,14 @@ def _reward_cfg() -> RewardConfig:
 
 def _make_env(args: argparse.Namespace):
     env_cfg_override: dict[str, Any] = {
-        "reward_config": _reward_cfg(),
+        "reward_parameters": _reward_cfg(),
+        "rewards": {
+            "tracking_lin_vel": {
+                "func": "legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward",
+                "weight": 1.0,
+                "params": {"name": "tracking_lin_vel"},
+            }
+        },
         "arm_stage": {
             "freeze_arm_joints": False,
             "disable_ee_goal_trajectory": True,

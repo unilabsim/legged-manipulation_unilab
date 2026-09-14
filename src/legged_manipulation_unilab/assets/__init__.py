@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import hashlib
-import json
+import filecmp
 import os
 import shutil
 from pathlib import Path
@@ -11,6 +10,7 @@ from pathlib import Path
 from filelock import FileLock
 
 ASSETS_ROOT_PATH = Path(__file__).resolve().parent
+_ROBOT_ASSETS_ROOT_PATH = ASSETS_ROOT_PATH / "robots"
 
 
 def cache_root() -> Path:
@@ -18,31 +18,35 @@ def cache_root() -> Path:
     if override:
         return Path(override).expanduser().resolve()
     root = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache"))
-    digest = hashlib.sha256((ASSETS_ROOT_PATH / "manifest.json").read_bytes()).hexdigest()[:16]
-    return root / "legged-manipulation-unilab" / digest
+    return root / "legged-manipulation-unilab"
+
+
+def _cached_file_matches(source: Path, target: Path) -> bool:
+    return target.is_file() and filecmp.cmp(source, target, shallow=False)
 
 
 def ensure_assets(*, include_floor: bool = False) -> Path:
-    """Copy bundled assets to a writable cache for XML materialization tools.
+    """Copy packaged robot assets to a writable cache for XML materialization.
 
-    All meshes, textures and XML ship in Git and the wheel. The local cache
-    allows scene tools to create temporary XML even with read-only site-packages.
-    Every listed file is checked for existence, so a partial cache is repaired.
+    The XML, meshes, and textures ship in Git and the wheel. A content-aware
+    comparison repairs missing or corrupted cache files without a separate
+    metadata file.
     """
-    manifest = json.loads((ASSETS_ROOT_PATH / "manifest.json").read_text())
+    del include_floor  # The packaged robot tree includes the Motrix floor texture.
     root = cache_root()
     root.mkdir(parents=True, exist_ok=True)
     with FileLock(str(root / ".assets.lock")):
-        for relative in manifest["sha256"]:
-            source, target = ASSETS_ROOT_PATH / relative, root / relative
-            if (
-                not target.is_file()
-                or hashlib.sha256(target.read_bytes()).hexdigest() != manifest["sha256"][relative]
-            ):
-                target.parent.mkdir(parents=True, exist_ok=True)
-                temporary = target.with_suffix(target.suffix + ".tmp")
-                shutil.copyfile(source, temporary)
-                temporary.replace(target)
+        for source in _ROBOT_ASSETS_ROOT_PATH.rglob("*"):
+            if not source.is_file():
+                continue
+            relative = source.relative_to(ASSETS_ROOT_PATH)
+            target = root / relative
+            if _cached_file_matches(source, target):
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            temporary = target.with_suffix(target.suffix + ".tmp")
+            shutil.copyfile(source, temporary)
+            temporary.replace(target)
     return root
 
 

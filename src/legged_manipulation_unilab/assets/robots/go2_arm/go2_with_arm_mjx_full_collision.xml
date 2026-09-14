@@ -387,12 +387,12 @@
     <general class="knee" name="RR_calf" joint="RR_calf_joint"/>
     <!-- Airbot Play actuators -->
     <!-- kp/kv 由 ControlConfig.arm_Kp/arm_Kd 通过 position_actuator_gains 在运行时写入，XML 不重复定义 -->
-    <position joint="joint1" class="joint1" forcerange="-24 24" forcelimited="true" ctrllimited="true"/>
-    <position joint="joint2" class="joint2" forcerange="-24 24" forcelimited="true" ctrllimited="true"/>
-    <position joint="joint3" class="joint3" forcerange="-24 24" forcelimited="true" ctrllimited="true"/>
-    <position joint="joint4" class="joint4" forcerange="-8 8" forcelimited="true" ctrllimited="true"/>
-    <position joint="joint5" class="joint5" forcerange="-8 8" forcelimited="true" ctrllimited="true"/>
-    <position joint="joint6" class="joint6" forcerange="-8 8" forcelimited="true" ctrllimited="true"/>
+    <position name="joint1" joint="joint1" class="joint1" forcerange="-24 24" forcelimited="true" ctrllimited="true"/>
+    <position name="joint2" joint="joint2" class="joint2" forcerange="-24 24" forcelimited="true" ctrllimited="true"/>
+    <position name="joint3" joint="joint3" class="joint3" forcerange="-24 24" forcelimited="true" ctrllimited="true"/>
+    <position name="joint4" joint="joint4" class="joint4" forcerange="-8 8" forcelimited="true" ctrllimited="true"/>
+    <position name="joint5" joint="joint5" class="joint5" forcerange="-8 8" forcelimited="true" ctrllimited="true"/>
+    <position name="joint6" joint="joint6" class="joint6" forcerange="-8 8" forcelimited="true" ctrllimited="true"/>
   <!-- <position name='gripper' tendon='gripper_gear' ctrllimited="true" ctrlrange="0. 1." kp="3" user="1" forcelimited="true" forcerange="-1 1"/> -->
   </actuator>
 
@@ -460,6 +460,18 @@
   <jointvel name="joint6_vel" joint="joint6" />
   <!-- <tendonvel name="gripper_vel" tendon="gripper_gear" /> -->
 
+  <jointactuatorfrc name="FL_hip_joint_torque" joint="FL_hip_joint" />
+  <jointactuatorfrc name="FL_thigh_joint_torque" joint="FL_thigh_joint" />
+  <jointactuatorfrc name="FL_calf_joint_torque" joint="FL_calf_joint" />
+  <jointactuatorfrc name="FR_hip_joint_torque" joint="FR_hip_joint" />
+  <jointactuatorfrc name="FR_thigh_joint_torque" joint="FR_thigh_joint" />
+  <jointactuatorfrc name="FR_calf_joint_torque" joint="FR_calf_joint" />
+  <jointactuatorfrc name="RL_hip_joint_torque" joint="RL_hip_joint" />
+  <jointactuatorfrc name="RL_thigh_joint_torque" joint="RL_thigh_joint" />
+  <jointactuatorfrc name="RL_calf_joint_torque" joint="RL_calf_joint" />
+  <jointactuatorfrc name="RR_hip_joint_torque" joint="RR_hip_joint" />
+  <jointactuatorfrc name="RR_thigh_joint_torque" joint="RR_thigh_joint" />
+  <jointactuatorfrc name="RR_calf_joint_torque" joint="RR_calf_joint" />
   <jointactuatorfrc name="joint1_torque" joint="joint1" />
   <jointactuatorfrc name="joint2_torque" joint="joint2" />
   <jointactuatorfrc name="joint3_torque" joint="joint3" />
