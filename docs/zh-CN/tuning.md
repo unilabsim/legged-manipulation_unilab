@@ -18,6 +18,10 @@
 奖励项是 Manager-Based term。调整权重时保留每个 term 的 `func`、`weight`
 和 `params.name`。
 
+Iteration 不能直接比较并行环境数不同的配置。PPO 每次更新采集 4096 × 24 条
+transition，HIM-PPO 采集 128 × 24 条。需要相同采样预算时，请比较总环境步数，
+或设置 `training.num_timesteps`。
+
 ## 建议流程
 
 1. 先用少于 20 次更新的配置做冒烟训练。

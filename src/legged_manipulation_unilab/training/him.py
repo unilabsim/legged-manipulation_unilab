@@ -1,5 +1,4 @@
 import datetime
-import logging
 import statistics
 import time
 from contextlib import ExitStack
@@ -55,13 +54,6 @@ def _backend_adapter(cfg: DictConfig) -> BackendAdapter:
 
 def _get_log_root(cfg: DictConfig) -> str:
     return str(get_log_root(ROOT_DIR, cfg))
-
-
-def _configure_console_logging() -> None:
-    """Show the runner's INFO progress records when launched as a CLI."""
-    if logging.getLogger().handlers:
-        return
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 
 def play_him_ppo(cfg: DictConfig, device: str) -> str | None:
@@ -183,7 +175,6 @@ def play_him_ppo(cfg: DictConfig, device: str) -> str | None:
 
 @hydra.main(version_base="1.3", config_path="../conf/ppo_him", config_name="config")
 def main(cfg: DictConfig) -> None:
-    _configure_console_logging()
     if int(cfg.env.history.num_actor_history) != int(cfg.algo.num_actor_history):
         raise ValueError("HIM actor history must match env.history.num_actor_history")
     if int(cfg.env.history.num_critic_history) != int(cfg.algo.num_critic_history):

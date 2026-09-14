@@ -19,6 +19,11 @@ long run to confirm which YAML values are active.
 Reward terms are Manager-Based term entries. Preserve each term's `func`,
 `weight`, and `params.name` when changing its weight.
 
+Iterations are not comparable across recipes with different parallel-environment
+counts. PPO collects 4096 × 24 transitions per update, while HIM-PPO collects
+128 × 24. Compare runs by total environment steps or set `training.num_timesteps`
+when equal sampling budgets are required.
+
 ## Suggested workflow
 
 1. Run a short smoke configuration with fewer than 20 updates.
