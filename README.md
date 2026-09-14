@@ -1,67 +1,90 @@
 # Legged manipulation for UniLab
 
-Go2 + Airbot locomotion and manipulation with PPO and HIM-PPO. This repository
-is the sole owner of the task, its configuration, IK tools, robot assets, and
-HIM-PPO implementation extracted from UniLab and unilab_rl.
+[中文](README_zh.md)
 
-[中文](README_zh.md) · [Roadmap: UniLab #1528](https://github.com/unilabsim/UniLab/issues/1528)
+## Overview
 
-## Install
+This is a reinforcement-learning task repository for a Unitree Go2 quadruped
+combined with a six-DoF Airbot arm. It provides the complete Manip-Loco
+training configuration, robot scene, IK diagnostics, and both PPO and HIM-PPO
+training recipes.
+
+The task is registered with UniLab as `Go2ArmManipLoco` and supports MuJoCo and
+Motrix. The robot XML, meshes, and textures are bundled with the repository, so
+robot data does not need to be downloaded from Hugging Face before training.
+
+## Capabilities and showcase
+
+### Capabilities
+
+| Capability | Description |
+| --- | --- |
+| Mobile manipulation | Adds Airbot end-effector goal tracking to Go2 locomotion. |
+| PPO training | Provides MuJoCo and Motrix training recipes. |
+| HIM-PPO training | Uses actor observation history and a privileged critic input. |
+| IK diagnostics | Visualizes targets, checks Jacobians, calibrates orientation, and compares numerical methods. |
+| Local robot assets | Bundles the Go2 + Airbot scene, meshes, and textures for offline loading. |
+| Playback and export | Selects checkpoints from training logs, renders playback, and exports HIM-PPO policies. |
+
+### Showcase
+
+<!-- TODO: replace this with a 10–20 second training/playback overview GIF. -->
+<!-- `docs/assets/showcase.gif` -->
+
+## Reproduction
+
+### Install
 
 ```bash
 git clone https://github.com/unilabsim/legged-manipulation_unilab.git
 cd legged-manipulation_unilab
-uv sync --extra mujoco
+uv sync --extra mujoco --extra motrix
 ```
 
-Use `uv sync --extra motrix` for Motrix, or select both extras to install both
-backends. Add `--extra export` when exporting policies. UniLab and unilab-rl
-retain their original version numbers, 1.1.0; the Git sources in
-[pyproject.toml](pyproject.toml) and [uv.lock](uv.lock) select the
-extraction-compatible revisions.
-
-Approximately 37 MB of robot XML, meshes, and textures are bundled in Git and
-the Python package. Robot asset loading requires no Hugging Face download or
-runtime network access. `uv run legged-assets` prepares a writable local cache;
-`LEGGED_MANIPULATION_ASSET_CACHE` can select its directory.
-
-## Train and evaluate
-
-| Algorithm | Owner configurations |
-| --- | --- |
-| PPO | MuJoCo, Motrix |
-| HIM-PPO | MuJoCo |
-
-These are the available owner configurations, not a training-quality benchmark.
+Add `--extra export` when exporting HIM-PPO policies. Prepare the local asset
+cache with:
 
 ```bash
-uv run legged-train --algo ppo --sim mujoco training.log_root=./logs/ppo-mujoco training.no_play=true
-uv run legged-train --algo ppo --sim motrix training.log_root=./logs/ppo-motrix training.no_play=true
-uv run legged-train --algo him_ppo --sim mujoco training.log_root=./logs/him-mujoco training.no_play=true
+uv run legged-assets
 ```
 
-The task defaults to `go2_arm_manip_loco`. Append Hydra overrides for tuning;
-`--cfg` prints the composed configuration. Select the backend with `--sim`.
+### Train
 
-For evaluation, pass the parent log group and let `--run` select the latest
-training run and checkpoint:
+All built-in training recipes default to 3000 policy updates:
+
+```bash
+uv run legged-train --algo ppo --sim mujoco training.no_play=true
+uv run legged-train --algo ppo --sim motrix training.no_play=true
+uv run legged-train --algo him_ppo --sim mujoco training.no_play=true
+```
+
+Run directories are created under `logs/ppo-mujoco`, `logs/ppo-motrix`, or
+`logs/him-mujoco`, respectively. Override `training.log_root` only when a
+different location is required.
+
+Use `--cfg` to inspect the composed configuration. For a short smoke run,
+override the update count:
+
+```bash
+uv run legged-train --algo ppo --sim mujoco algo.max_iterations=10 training.no_play=true
+```
+
+### Evaluate and export
+
+Pass a parent log group, one training-run directory, or one `model_*.pt` file to
+`--run`; the latest checkpoint is selected by default:
 
 ```bash
 uv run legged-eval --algo ppo --sim mujoco --run logs/ppo-mujoco/Go2ArmManipLoco
+uv run legged-eval --algo ppo --sim motrix --run logs/ppo-motrix/Go2ArmManipLoco
 uv run legged-eval --algo him_ppo --sim mujoco --run logs/him-mujoco/Go2ArmManipLoco
 ```
 
-`--run` also accepts one training run directory or a `model_*.pt` file. Select
-another checkpoint with `--checkpoint 100`. On a headless machine, prefix the
-command with `MUJOCO_GL=egl`. A checkpoint trained with a different
-policy/config contract fails the sim2sim guard; train a fresh run after changing
-those settings.
+Select another checkpoint with `--checkpoint 100`. Set `MUJOCO_GL=egl` on a
+headless machine. With the export extra installed, add `--export` to HIM-PPO
+evaluation to export the policy.
 
-HIM-PPO evaluation accepts `--export` with the export extra installed.
-See [HIM-PPO](docs/en/2-algorithms/6-him_ppo.md) for history dimensions and
-the default arm training stage.
-
-## Tools and documentation
+### IK checks
 
 ```bash
 uv run legged-ik
@@ -70,12 +93,20 @@ uv run legged-calibrate --target 0.30 0.0 0.25
 uv run legged-benchmark-jacobian
 ```
 
-The IK viewer needs a display. Diagnosis, orientation calibration, and Jacobian
-benchmarking use the bundled MuJoCo scene; calibration does not take an ONNX
-policy argument. Use each command's `--help` for its options.
+The viewer requires a graphical display. Diagnosis, calibration, and the
+benchmark use the bundled MuJoCo scene.
 
-- [Task owners and commands](docs/en/4-tasks/4-manip_loco.md)
-- [Tuning and IK checks](docs/en/8-manipulation/2-manip_loco.md)
-- [Architecture and extraction record](docs/ARCHITECTURE.md)
-- [Executed migration checks](docs/VALIDATION.md)
-- [Source provenance](MIGRATION_MANIFEST.json) and [license notices](NOTICE.md)
+## Documentation
+
+- [Documentation index](docs/README.md)
+- [Task and reproduction](docs/en/task.md)
+- [Using HIM-PPO](docs/en/him-ppo.md)
+- [Tuning guide](docs/en/tuning.md)
+- [IK diagnostics](docs/en/ik-diagnostics.md)
+- [Maintainer architecture notes](docs/en/architecture.md)
+
+## License
+
+The repository is primarily Apache-2.0 and also contains BSD-3-Clause components
+and upstream robot-asset notices. See [LICENSE](LICENSE), [LICENSES](LICENSES),
+and [NOTICE](NOTICE.md).

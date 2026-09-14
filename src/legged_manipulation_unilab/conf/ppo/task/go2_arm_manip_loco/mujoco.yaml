@@ -2,9 +2,10 @@
 training:
   task_name: Go2ArmManipLoco
   sim_backend: mujoco
+  log_root: logs/ppo-mujoco
 algo:
   num_envs: 4096
-  max_iterations: 151
+  max_iterations: 3000
   empirical_normalization: true
   obs_groups:
     actor:

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import socket
 import subprocess
 import sys
@@ -22,6 +21,46 @@ def test_owner_composition_and_identity(algo, sim):
     assert cfg.training.sim_backend == sim
     with pytest.raises(ValueError, match="identity"):
         compose_config(algo, sim, ["training={sim_backend:unknown}"])
+
+
+@pytest.mark.parametrize(
+    ("algo", "sim", "expected_log_root"),
+    [
+        ("ppo", "mujoco", "logs/ppo-mujoco"),
+        ("ppo", "motrix", "logs/ppo-motrix"),
+        ("him_ppo", "mujoco", "logs/him-mujoco"),
+    ],
+)
+def test_owner_log_roots_are_task_specific(algo, sim, expected_log_root):
+    cfg = compose_config(algo, sim, [])
+
+    assert cfg.training.log_root == expected_log_root
+
+
+def test_him_owner_only_selects_manager_supported_reward_terms():
+    cfg = compose_config("him_ppo", "mujoco", [])
+
+    assert set(cfg.reward) == {
+        "tracking_lin_vel",
+        "tracking_ang_vel",
+        "lin_vel_z",
+        "ang_vel_xy",
+        "roll",
+        "base_height",
+        "leg_pose",
+        "dof_pos_limits",
+        "action_rate",
+        "torques",
+        "energy",
+        "dof_vel",
+        "dof_acc",
+        "stand_still",
+        "contact",
+        "swing_feet_z",
+        "object_distance",
+        "object_distance_l2",
+        "arm_collision",
+    }
 
 
 def test_installed_registration_in_spawn(tmp_path):
@@ -53,9 +92,7 @@ def test_bundled_assets_work_offline_and_repair_cache(monkeypatch, tmp_path):
     root = assets.ensure_assets()
     model = mujoco.MjModel.from_xml_path(str(root / "robots/go2_arm/scene_flat.xml"))
     assert model.nu == 18
-    manifest = json.loads((assets.ASSETS_ROOT_PATH / "manifest.json").read_text())
-    relative = next(path for path in manifest["sha256"] if path.endswith(".obj"))
-    mesh = root / relative
+    mesh = next((root / "robots").rglob("*.obj"))
     original = mesh.read_bytes()
     mesh.write_bytes(b"x" * len(original))
     assert assets.ensure_assets() == root

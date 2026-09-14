@@ -2,6 +2,7 @@
 training:
   task_name: Go2ArmManipLoco
   sim_backend: mujoco
+  log_root: logs/him-mujoco
 algo:
   num_envs: 128
   max_iterations: 3000

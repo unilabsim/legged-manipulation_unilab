@@ -2,6 +2,7 @@
 training:
   task_name: Go2ArmManipLoco
   sim_backend: motrix
+  log_root: logs/ppo-motrix
 algo:
   num_envs: 4096
   max_iterations: 3000

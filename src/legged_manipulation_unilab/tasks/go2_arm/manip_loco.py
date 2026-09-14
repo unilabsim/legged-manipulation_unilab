@@ -53,6 +53,39 @@ def _default_go2_arm_scene() -> SceneCfg:
     return SceneCfg(model_file=_default_go2_arm_model_file())
 
 
+_ROBOT_BODY_NAMES = (
+    "base",
+    "FL_hip",
+    "FL_thigh",
+    "FL_calf",
+    "FR_hip",
+    "FR_thigh",
+    "FR_calf",
+    "RL_hip",
+    "RL_thigh",
+    "RL_calf",
+    "RR_hip",
+    "RR_thigh",
+    "RR_calf",
+    "arm_base_on_go2",
+    "arm_base",
+    "link1",
+    "link2",
+    "link3",
+    "link4",
+    "link5",
+    "link6",
+)
+
+# ``arm_base_on_go2`` is a zero-mass, zero-inertia adapter body. MotrixSim
+# requires a positive-definite mass matrix when a mass override is present, so
+# assigning the event's positive minimum mass to that body makes the first step
+# produce NaNs. Keep it in scene bindings but exclude it from mass scaling.
+_MASS_RANDOMIZATION_BODY_NAMES = tuple(
+    name for name in _ROBOT_BODY_NAMES if name != "arm_base_on_go2"
+)
+
+
 @dataclass
 class InitState:
     pos: list[float] = field(default_factory=lambda: [0.0, 0.0, 0.42])
@@ -239,7 +272,7 @@ class Go2ArmManipLocoCfg(Go2ArmBaseCfg):  # pyright: ignore[reportIncompatibleVa
                 func=randomize_rigid_body_mass,
                 mode="reset",
                 params={
-                    "asset_cfg": SceneEntityCfg("robot", body_names=(".*",)),
+                    "asset_cfg": SceneEntityCfg("robot", body_names=_MASS_RANDOMIZATION_BODY_NAMES),
                     "mass_distribution_params": tuple(dr["body_mass_multiplier_range"]),
                     "operation": "scale",
                     "recompute_inertia": False,
@@ -367,29 +400,7 @@ def make_go2_arm_manip_loco_env(
         "robot": EntityCfg(
             root_body_name=cfg.asset.base_name,
             joint_names=backend.get_actuator_joint_names(),
-            body_names=(
-                cfg.asset.base_name,
-                "FL_hip",
-                "FL_thigh",
-                "FL_calf",
-                "FR_hip",
-                "FR_thigh",
-                "FR_calf",
-                "RL_hip",
-                "RL_thigh",
-                "RL_calf",
-                "RR_hip",
-                "RR_thigh",
-                "RR_calf",
-                "arm_base_on_go2",
-                "arm_base",
-                "link1",
-                "link2",
-                "link3",
-                "link4",
-                "link5",
-                "link6",
-            ),
+            body_names=_ROBOT_BODY_NAMES,
             geom_names=(cfg.asset.ground,),
             actuator_names=backend.get_actuator_names(),
         )

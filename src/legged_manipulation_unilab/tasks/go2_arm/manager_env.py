@@ -500,6 +500,26 @@ class Go2ArmReward(ManagerTermBase):
         self._views = env.scene.bind_sensor_data(tuple(sensor_names))
         self._ee_view = env.scene.bind_sensor_data((self._task_cfg.sensor.ee_local_pos,))
         self._entity: Entity = env.scene["robot"]
+        self._torque_view = None
+        if self._name in {"torques", "energy"}:
+            self._torque_view = env.scene.bind_sensor_data(
+                tuple(f"{joint_name}_torque" for joint_name in self._entity.joint_names)
+            )
+            if self._torque_view.dimensions != (1,) * len(self._entity.joint_names):
+                raise ValueError("Unexpected Go2Arm actuator-force sensor dimensions")
+        self._previous_joint_vel = np.array(self._entity.data.joint_vel, copy=True)
+
+    def reset(self, env_ids: np.ndarray | slice | None) -> None:
+        """Restart finite-difference acceleration after the selected envs reset."""
+        current = np.asarray(self._entity.data.joint_vel)
+        if env_ids is None:
+            env_ids = slice(None)
+        self._previous_joint_vel[env_ids] = current[env_ids]
+
+    def _read_joint_torques(self) -> np.ndarray:
+        if self._torque_view is None:
+            raise RuntimeError("Go2Arm torque sensors were not initialized")
+        return np.asarray(self._torque_view.read())
 
     def __call__(self, env: "ManagerBasedRlEnv", name: str | None = None) -> np.ndarray:
         if name is not None and name != self._name:
@@ -555,12 +575,32 @@ class Go2ArmReward(ManagerTermBase):
         elif name == "leg_pose":
             weights = np.array([1.0, 1.0, 0.1] * 4 + [0.0] * 6, dtype=get_global_dtype())
             value = np.sum(weights * np.square(joint_pos - defaults), axis=1)
+        elif name == "dof_pos_limits":
+            if not cfg.leg_dof_upper_limits or not cfg.leg_dof_lower_limits:
+                value = np.zeros(env.num_envs, dtype=get_global_dtype())
+            else:
+                upper = np.asarray(cfg.leg_dof_upper_limits, dtype=get_global_dtype())
+                lower = np.asarray(cfg.leg_dof_lower_limits, dtype=get_global_dtype())
+                margin = cfg.dof_pos_limit_margin
+                leg_pos = joint_pos[:, :12]
+                over = np.square(np.maximum(leg_pos - upper + margin, 0.0))
+                under = np.square(np.maximum(lower + margin - leg_pos, 0.0))
+                value = np.sum(over + under, axis=1)
         elif name == "action_rate":
             value = np.sum(
                 np.square(env.action_manager.action - env.action_manager.prev_action), axis=1
             )
+        elif name == "torques":
+            value = np.sum(np.abs(self._read_joint_torques()), axis=1)
+        elif name == "energy":
+            torques = self._read_joint_torques()
+            value = np.sum(np.abs(joint_vel) * np.abs(torques), axis=1)
         elif name == "dof_vel":
             value = np.sum(np.square(joint_vel), axis=1)
+        elif name == "dof_acc":
+            acceleration = (joint_vel - self._previous_joint_vel) / env.step_dt
+            self._previous_joint_vel[:] = joint_vel
+            value = np.sum(np.square(acceleration), axis=1)
         elif name == "stand_still":
             still = (~command._command_is_moving(cmd)).astype(get_global_dtype())
             value = still * np.sum(np.abs(joint_pos[:, :12] - defaults[:, :12]), axis=1)
@@ -610,7 +650,7 @@ class Go2ArmManagerBasedRlEnv(ManagerBasedRlEnv):
     """
 
     def get_playback_model(self, env_index: int | None = None) -> Any:
-        if self._cfg.fixed_model_variants is None:
+        if getattr(self._cfg, "fixed_model_variants", None) is None:
             visual_model_file = self.get_scene_visual_model_file()
             if visual_model_file:
                 return Path(visual_model_file)
