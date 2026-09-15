@@ -5,6 +5,7 @@ import types
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pytest
 
 import legged_manipulation_unilab
@@ -99,10 +100,30 @@ def test_train_him_ppo_play_uses_shared_playback_session_factory(
     mod.torch.save({"actor_state_dict": {}}, checkpoint)
     captured: dict[str, Any] = {}
 
+    class FakeCommandTerm:
+        def __init__(self):
+            self.vel_command_b = np.zeros((1, 3), dtype=np.float32)
+            self.curr_ee_goal_world = np.zeros((1, 3), dtype=np.float32)
+
+    class FakeCommandManager:
+        def get_term(self, name):
+            return FakeCommandTerm()
+
+    class FakeRobot:
+        class data:
+            root_link_pos_w = np.zeros((1, 3), dtype=np.float32)
+            root_link_quat_w = np.array([[1.0, 0.0, 0.0, 0.0]], dtype=np.float32)
+
+    class FakeScene:
+        def __getitem__(self, _name):
+            return FakeRobot
+
     class FakeSession:
         def __init__(self):
             self.env = types.SimpleNamespace(
                 cfg=types.SimpleNamespace(render_spacing=1.0),
+                command_manager=FakeCommandManager(),
+                scene=FakeScene(),
             )
             self.runner = object()
             self.policy = lambda obs: obs
