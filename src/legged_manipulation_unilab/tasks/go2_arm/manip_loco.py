@@ -49,8 +49,19 @@ def _default_go2_arm_model_file() -> str:
     return str(ASSETS_ROOT_PATH / "robots" / "go2_arm" / "scene_flat.xml")
 
 
+# The legacy task keyed every default-state consumer (reset pose, PD targets,
+# obs joint diff, pose rewards) to the XML "home" keyframe. The Manager-Based
+# runtime only reads a keyframe when the scene declares one, so every Go2Arm
+# SceneCfg must carry it or defaults fall back to qpos0 (zeros).
+_GO2_ARM_DEFAULT_KEYFRAME = "home"
+
+
+def _go2_arm_scene(model_file: str) -> SceneCfg:
+    return SceneCfg(model_file=model_file, default_keyframe_name=_GO2_ARM_DEFAULT_KEYFRAME)
+
+
 def _default_go2_arm_scene() -> SceneCfg:
-    return SceneCfg(model_file=_default_go2_arm_model_file())
+    return _go2_arm_scene(_default_go2_arm_model_file())
 
 
 _ROBOT_BODY_NAMES = (
@@ -122,6 +133,8 @@ class CommandsConfig:
     )
     resample_time_s: float | None = None
     zero_command_prob: float = 0.2
+    # Gait clock cadence in Hz; drives feet_phase advancement while moving.
+    gait_frequency: float = 2.0
 
 
 @dataclass
@@ -180,7 +193,7 @@ class Go2ArmManipLocoCfg(Go2ArmBaseCfg):  # pyright: ignore[reportIncompatibleVa
         scene = self.scene
         default_model_file = _default_go2_arm_model_file()
         if self.model_file != default_model_file and scene.model_file == default_model_file:
-            scene = SceneCfg(model_file=self.model_file)
+            scene = _go2_arm_scene(self.model_file)
         self.scene = scene  # pyright: ignore[reportIncompatibleVariableOverride]
         self._configure_managers()
 
