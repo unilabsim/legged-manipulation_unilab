@@ -84,7 +84,7 @@ class HIMActorCritic(nn.Module):
         with torch.no_grad():
             vel, latent = self.estimator(obs_history)
         actor_input = torch.cat(
-            (obs_history[:, : self.num_one_step_obs], vel, latent),
+            (obs_history[:, -self.num_one_step_obs :], vel, latent),
             dim=-1,
         )
         mean = self.actor(actor_input)
@@ -104,7 +104,7 @@ class HIMActorCritic(nn.Module):
         del observations
         vel, latent = self.estimator(obs_history)
         actor_input = torch.cat(
-            (obs_history[:, : self.num_one_step_obs], vel, latent),
+            (obs_history[:, -self.num_one_step_obs :], vel, latent),
             dim=-1,
         )
         return self.actor(actor_input)

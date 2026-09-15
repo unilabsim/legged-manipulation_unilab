@@ -124,3 +124,46 @@ def test_him_logging_uses_rsl_rl_rollout_aggregation(
     assert "Learning iteration 0/1" in console
     assert "reward/foo:" in console
     assert "Episode_Reward/" not in console
+
+
+class _ZeroEstimator(torch.nn.Module):
+    """Estimator stub isolating the actor's direct obs path."""
+
+    def forward(self, obs_history: torch.Tensor):
+        n = obs_history.shape[0]
+        return torch.zeros(n, 3), torch.zeros(n, 16)
+
+
+def test_him_actor_consumes_newest_history_slice():
+    """The flattened history is oldest-first; the actor must read the newest frame.
+
+    Reading the first slice fed the policy a 4-step-stale (80 ms) observation,
+    which made phase-locked gait timing systematically impossible and locked
+    the policy into a delay-frequency shuffle.
+    """
+    from legged_manipulation_unilab.algos.him_ppo.actor_critic import HIMActorCritic
+
+    one = 6
+    ac = HIMActorCritic(
+        num_actor_obs=3 * one,
+        num_critic_obs=one,
+        num_one_step_obs=one,
+        num_actions=2,
+        actor_hidden_dims=[8],
+        critic_hidden_dims=[8],
+    )
+    ac.estimator = _ZeroEstimator()
+
+    base = torch.zeros(1, 3 * one)
+    out_base = ac.act_inference(base.clone())
+
+    oldest_changed = base.clone()
+    oldest_changed[:, :one] += 1.0
+    out_oldest = ac.act_inference(oldest_changed)
+
+    newest_changed = base.clone()
+    newest_changed[:, -one:] += 1.0
+    out_newest = ac.act_inference(newest_changed)
+
+    assert torch.equal(out_base, out_oldest), "actor must ignore the oldest slice"
+    assert not torch.allclose(out_base, out_newest), "actor must read the newest slice"
