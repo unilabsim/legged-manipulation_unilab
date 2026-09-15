@@ -4,7 +4,7 @@ training:
   sim_backend: mujoco
   log_root: logs/him-mujoco
 algo:
-  num_envs: 128
+  num_envs: 4096
   max_iterations: 3000
   num_one_step_obs: 76
   num_actor_history: 5
@@ -19,14 +19,17 @@ algo:
     velocity_target_start: 0
     target_obs_start: 3
 reward:
+  # Aligned with the proven full loco-manip economics (legacy PPO owner yaml):
+  # strong tracking pull, zero effort penalties, meaningful stand_still. The
+  # previous HIM weights made standing near-optimal at every command range.
   tracking_lin_vel:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: 1.0
+    weight: 2.0
     params:
       name: tracking_lin_vel
   tracking_ang_vel:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: 0.2
+    weight: 1.0
     params:
       name: tracking_ang_vel
   lin_vel_z:
@@ -41,7 +44,7 @@ reward:
       name: ang_vel_xy
   roll:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -2.0
+    weight: -5.0
     params:
       name: roll
   base_height:
@@ -51,12 +54,12 @@ reward:
       name: base_height
   leg_pose:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -0.1
+    weight: -0.5
     params:
       name: leg_pose
   dof_pos_limits:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -10.0
+    weight: 0.0
     params:
       name: dof_pos_limits
   action_rate:
@@ -66,27 +69,27 @@ reward:
       name: action_rate
   torques:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -0.0002
+    weight: 0.0
     params:
       name: torques
   energy:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -0.0002
+    weight: 0.0
     params:
       name: energy
   dof_vel:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -0.0001
+    weight: 0.0
     params:
       name: dof_vel
   dof_acc:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -2.5e-07
+    weight: 0.0
     params:
       name: dof_acc
   stand_still:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -0.1
+    weight: -0.5
     params:
       name: stand_still
   contact:
@@ -96,9 +99,14 @@ reward:
       name: contact
   swing_feet_z:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: 4.0
+    weight: 6.0
     params:
       name: swing_feet_z
+  foot_drag:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: -0.1
+    params:
+      name: foot_drag
   object_distance:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
     weight: 2.0
@@ -153,15 +161,17 @@ env:
     use_orientation: false
   command_config:
     vel_limit:
-    - - -0.3
-      - -0.2
+    - - -0.6
       - -0.4
-    - - 0.5
-      - 0.2
+      - -0.8
+    - - 1.0
       - 0.4
-    resample_time_s: 5.0
+      - 0.8
+    zero_command_prob: 0.15
+    resample_time_s: 4.0
+    gait_frequency: 2.5
   curriculum_config:
-    enable: true
+    enable: false
     threshold: 0.8
     step_size:
     - 0.1
@@ -210,3 +220,4 @@ env:
     tracking_sigma: 0.25
     base_height_target: 0.3
     object_sigma: 0.1
+    target_foot_height: 0.1

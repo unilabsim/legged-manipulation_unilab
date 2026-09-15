@@ -1,4 +1,5 @@
 import datetime
+import json
 import statistics
 import time
 from contextlib import ExitStack
@@ -6,8 +7,9 @@ from pathlib import Path
 from typing import Any, cast
 
 import hydra
+import numpy as np
 import torch
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 
 EXPORT_POLICY = False  # set to True in __main__ block
 
@@ -38,6 +40,7 @@ from unilab.visualization.interactive_playback import (
     make_sim2sim_preflight,
     normalize_checkpoint_value,
 )
+from unisim.backend.base import DebugPrimitive
 from unisim.backend.mujoco.xml import materialize_scene_visual_override
 
 from legged_manipulation_unilab.algos.him_ppo.runner import HIMOnPolicyRunner
@@ -50,6 +53,98 @@ def _backend_adapter(cfg: DictConfig) -> BackendAdapter:
         algo_name="ppo_him",
         scene_materializer=materialize_scene_visual_override,
     )
+
+
+def _restore_trained_arm_stage(cfg: DictConfig, load_path_dir: Path) -> None:
+    """Align the replay task stage with the checkpoint's training contract.
+
+    ``arm_stage`` selects the loco-manip stage (frozen arm vs IK-tracked EE
+    goal) but sits outside the sim2sim contract lists, so an eval composed
+    from owner defaults would replay stage-one semantics against a full-mode
+    checkpoint: frozen arm, fixed EE goal. The training run dir records the
+    trained env section in ``run_config.json``; prefer it when present.
+    """
+    run_config_path = Path(load_path_dir) / "run_config.json"
+    if not run_config_path.is_file():
+        return
+    run_config = json.loads(run_config_path.read_text())
+    trained = ((run_config.get("config") or {}).get("env") or {}).get("arm_stage")
+    if not isinstance(trained, dict) or not trained:
+        return
+    current = OmegaConf.to_container(cfg.env.arm_stage, resolve=True)
+    if trained != current:
+        print(f"Restoring arm_stage from checkpoint run_config.json: {current} -> {trained}")
+        OmegaConf.update(cfg, "env.arm_stage", trained)
+
+
+def _quat_wxyz_from_z_to(direction: np.ndarray) -> tuple[float, float, float, float]:
+    """Unit wxyz quaternion rotating +z onto ``direction`` (unit or not)."""
+    axis_z = np.array([0.0, 0.0, 1.0])
+    norm = float(np.linalg.norm(direction))
+    if norm < 1.0e-9:
+        return (1.0, 0.0, 0.0, 0.0)
+    target = np.asarray(direction, dtype=np.float64) / norm
+    cosine = float(np.clip(np.dot(axis_z, target), -1.0, 1.0))
+    if cosine > 1.0 - 1.0e-9:
+        return (1.0, 0.0, 0.0, 0.0)
+    if cosine < -1.0 + 1.0e-9:
+        return (0.0, 1.0, 0.0, 0.0)
+    axis = np.cross(axis_z, target)
+    axis = axis / np.linalg.norm(axis)
+    half = np.sqrt(0.5 * (1.0 - cosine))
+    return (float(np.sqrt(0.5 * (1.0 + cosine))), *(float(v * half) for v in axis))
+
+
+def _yaw_from_quat_wxyz(quat_wxyz: np.ndarray) -> float:
+    w, x, y, z = (float(v) for v in quat_wxyz)
+    return float(np.arctan2(2.0 * (w * z + x * y), 1.0 - 2.0 * (y * y + z * z)))
+
+
+def build_play_debug_overlays(
+    *,
+    vel_commands: np.ndarray,
+    ee_goal_world: np.ndarray,
+    base_pos_w: np.ndarray,
+    base_quat_w: np.ndarray,
+) -> list[list[DebugPrimitive]]:
+    """Per-env playback overlay: EE goal marker plus a velocity-command arrow.
+
+    The command is body-frame; the arrow is drawn in world frame, so it must be
+    rotated by the robot's live yaw or the video shows a growing mismatch as
+    the robot drifts off its initial heading. The MuJoCo offline renderer
+    draws ``sphere``/``arrow`` primitives; ``text`` is a documented no-op
+    there, so the command magnitude rides on the arrow length and the periodic
+    console log instead.
+    """
+    overlays: list[list[DebugPrimitive]] = []
+    for index in range(len(vel_commands)):
+        primitives = [
+            DebugPrimitive(
+                kind="sphere",
+                pos=tuple(float(v) for v in ee_goal_world[index]),
+                size=(0.03,),
+                rgba=(0.9, 0.2, 0.2, 0.8),
+            )
+        ]
+        planar = np.asarray(vel_commands[index][:2], dtype=np.float64)
+        speed = float(np.linalg.norm(planar))
+        if speed > 0.1:
+            yaw = _yaw_from_quat_wxyz(np.asarray(base_quat_w[index], dtype=np.float64))
+            cos, sin = np.cos(yaw), np.sin(yaw)
+            direction = np.array(
+                [cos * planar[0] - sin * planar[1], sin * planar[0] + cos * planar[1], 0.0]
+            )
+            primitives.append(
+                DebugPrimitive(
+                    kind="arrow",
+                    pos=tuple(float(v) for v in base_pos_w[index]),
+                    quat=_quat_wxyz_from_z_to(direction),
+                    size=(0.3 + 0.4 * speed,),
+                    rgba=(0.2, 0.5, 0.9, 0.8),
+                )
+            )
+        overlays.append(primitives)
+    return overlays
 
 
 def _get_log_root(cfg: DictConfig) -> str:
@@ -81,6 +176,8 @@ def play_him_ppo(cfg: DictConfig, device: str) -> str | None:
             f"(found keys: {_ckpt_keys}). Aborting play."
         )
         return None
+
+    _restore_trained_arm_stage(cfg, load_path_dir)
 
     preflight = make_sim2sim_preflight(cfg, algo_name="ppo")
     if preflight is not None:
@@ -148,6 +245,27 @@ def play_him_ppo(cfg: DictConfig, device: str) -> str | None:
         output_video = Path(load_path_dir) / "play_video.mp4"
         print(f"Rendering video to {output_video}...")
         print("Collecting physics states...")
+        command = env.command_manager.get_term("task")
+        frame_counter = {"n": 0}
+
+        def _play_step(obs):
+            actor = session.step_once()["actor"]
+            frame_counter["n"] += 1
+            if frame_counter["n"] % 50 == 0:
+                print(
+                    f"[play] frame {frame_counter['n']:4d} "
+                    f"vel_cmd={np.round(np.asarray(command.vel_command_b)[0], 3).tolist()}"
+                )
+            return actor
+
+        def _play_overlays():
+            return build_play_debug_overlays(
+                vel_commands=np.asarray(command.vel_command_b),
+                ee_goal_world=np.asarray(command.curr_ee_goal_world),
+                base_pos_w=np.asarray(env.scene["robot"].data.root_link_pos_w),
+                base_quat_w=np.asarray(env.scene["robot"].data.root_link_quat_w),
+            )
+
         with torch.inference_mode():
             render_play_mode(
                 env,
@@ -158,7 +276,7 @@ def play_him_ppo(cfg: DictConfig, device: str) -> str | None:
                 num_steps=cfg.training.play_steps,
                 output_video=output_video,
                 initialize=lambda: session.reset()["actor"],
-                step=lambda _obs: session.step_once()["actor"],
+                step=_play_step,
                 camera_kwargs={
                     "cam_distance": cfg.training.cam_distance,
                     "cam_elevation": cfg.training.cam_elevation,
@@ -168,6 +286,7 @@ def play_him_ppo(cfg: DictConfig, device: str) -> str | None:
                     "cam_tracking_env_idx": getattr(cfg.training, "cam_tracking_env_idx", 0),
                     "cam_tracking_extra_envs": getattr(cfg.training, "cam_tracking_extra_envs", 2),
                 },
+                debug_overlay_getter=_play_overlays,
             )
         print("Done.")
         return str(output_video)

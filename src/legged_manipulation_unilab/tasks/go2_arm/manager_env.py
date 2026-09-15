@@ -38,6 +38,21 @@ def _command(env: Any) -> "Go2ArmManipLocoCommand":
     return term
 
 
+_UPVECTOR_SENSOR = "upvector"
+
+_ARM_TOUCH_SENSORS = (
+    "arm_touch_base",
+    "arm_touch_link1",
+    "arm_touch_link2",
+    "arm_touch_link3",
+    "arm_touch_link4",
+    "arm_touch_link5",
+    "arm_touch_link6",
+    "arm_touch_eef",
+    "arm_touch_g2base",
+)
+
+
 @dataclass(kw_only=True)
 class Go2ArmIKActionCfg(ActionTermCfg):
     """Flat 18-DOF action: leg position targets plus Jacobian-guided arm targets."""
@@ -191,7 +206,7 @@ class Go2ArmManipLocoCommand(CommandTerm):
         self.vel_command_b = np.zeros((n, 3), dtype=dtype)
         self.phase = np.zeros(n, dtype=np.float32)
         self.feet_phase = np.zeros((n, len(cfg_task.sensor.feet_force)), dtype=np.float32)
-        self.gait_frequency = 2.0
+        self.gait_frequency = float(cfg_task.command_config.gait_frequency)
         self.curr_ee_goal_cart = np.zeros((n, 3), dtype=dtype)
         self.curr_ee_goal_sphere = np.zeros((n, 3), dtype=dtype)
         self.curr_ee_goal_world = np.zeros((n, 3), dtype=dtype)
@@ -204,6 +219,7 @@ class Go2ArmManipLocoCommand(CommandTerm):
         self._traj_total_steps = np.ones(n, dtype=np.int32)
         self._episode_tracking_sum = np.zeros(n, dtype=np.float64)
         self._episode_steps = np.zeros(n, dtype=np.int32)
+        self._expansion_count = 0
         self._ctrl_dt = float(env.step_dt)
         self._metrics = {
             "tracking_lin_vel": np.zeros(n, dtype=np.float32),
@@ -222,12 +238,51 @@ class Go2ArmManipLocoCommand(CommandTerm):
         if not isinstance(ids, np.ndarray):  # narrows for type checkers
             raise TypeError("Command reset IDs must be an ndarray")
         self._resetting_ids = ids.copy()
-        self._episode_tracking_sum[ids] = 0.0
-        self._episode_steps[ids] = 0
         try:
-            return super().reset(ids)
+            result = super().reset(ids)
         finally:
             self._resetting_ids = None
+        # Update the curriculum from the finished episode after the reset
+        # resample (legacy reset-plan ordering: the fresh commands still use
+        # the pre-expansion range), then clear the episode accumulators.
+        self._update_command_curriculum(ids)
+        self._episode_tracking_sum[ids] = 0.0
+        self._episode_steps[ids] = 0
+        return result
+
+    def record_tracking(self, value: np.ndarray) -> None:
+        """Accumulate the unweighted tracking_lin_vel value for the curriculum."""
+        self._episode_tracking_sum += np.asarray(value, dtype=np.float64)
+
+    def _update_command_curriculum(self, env_ids: np.ndarray) -> None:
+        """Expand vel_limit when the finished episodes tracked well (legacy rule).
+
+        Mean per-step unweighted tracking_lin_vel above the threshold expands
+        the sampling range by ``step_size``, clamped to ``max_vel_limit``.
+        Without this the tiny initial range keeps standing near-optimal and
+        velocity tracking is never trained.
+        """
+        curriculum = self._task_cfg.curriculum_config
+        if not curriculum.enable:
+            return
+        ep_steps = np.maximum(self._episode_steps[env_ids], 1)
+        mean_per_step = float(np.mean(self._episode_tracking_sum[env_ids] / ep_steps))
+        if mean_per_step > float(curriculum.threshold):
+            step = np.asarray(curriculum.step_size, dtype=np.float64)
+            max_limit = np.asarray(curriculum.max_vel_limit, dtype=np.float64)
+            low = np.asarray(self._task_cfg.command_config.vel_limit[0], dtype=np.float64)
+            high = np.asarray(self._task_cfg.command_config.vel_limit[1], dtype=np.float64)
+            self._task_cfg.command_config.vel_limit = [
+                np.clip(low - step, -max_limit, 0.0).tolist(),
+                np.clip(high + step, 0.0, max_limit).tolist(),
+            ]
+            self._expansion_count += 1
+            print(
+                f"[curriculum] step {self._env.common_step_counter}: vel_limit -> "
+                f"low={self._task_cfg.command_config.vel_limit[0]} "
+                f"high={self._task_cfg.command_config.vel_limit[1]} "
+                f"(expansion #{self._expansion_count}, batch mean {mean_per_step:.3f})"
+            )
 
     def _update_metrics(self, env_ids: np.ndarray | None = None) -> None:
         del env_ids
@@ -265,6 +320,19 @@ class Go2ArmManipLocoCommand(CommandTerm):
         self._write_feet_phase(slice(None), moving)
         self._update_ee_trajectory()
         self._episode_steps += 1
+        self._log_command_state()
+
+    def _log_command_state(self) -> None:
+        """Publish the live velocity range so curriculum progress is observable."""
+        extras = getattr(self._env, "extras", None)
+        log = extras.get("log") if isinstance(extras, dict) else None
+        if not isinstance(log, dict):
+            return
+        low, high = self._task_cfg.command_config.vel_limit
+        for axis, label in enumerate("xyz"):
+            log[f"command/vel_low_{label}"] = float(low[axis])
+            log[f"command/vel_high_{label}"] = float(high[axis])
+        log["command/curriculum_expansions"] = self._expansion_count
 
     def post_compute(self) -> None:
         pos = np.asarray(self._goal_view.read(), dtype=get_global_dtype())
@@ -481,23 +549,33 @@ class Go2ArmReward(ManagerTermBase):
         super().__init__(env)
         self._name = str(cfg.params["name"])
         self._task_cfg = _task_cfg(env)
+        self._feet_force_names = tuple(self._task_cfg.sensor.feet_force)
+        self._feet_pos_names = tuple(self._task_cfg.sensor.feet_pos)
         sensor_names = [
             self._task_cfg.sensor.local_linvel,
             self._task_cfg.sensor.gyro,
-            "upvector",
-            *self._task_cfg.sensor.feet_force,
-            *self._task_cfg.sensor.feet_pos,
-            "arm_touch_base",
-            "arm_touch_link1",
-            "arm_touch_link2",
-            "arm_touch_link3",
-            "arm_touch_link4",
-            "arm_touch_link5",
-            "arm_touch_link6",
-            "arm_touch_eef",
-            "arm_touch_g2base",
+            _UPVECTOR_SENSOR,
+            *self._feet_force_names,
+            *self._feet_pos_names,
+            *_ARM_TOUCH_SENSORS,
         ]
         self._views = env.scene.bind_sensor_data(tuple(sensor_names))
+        # Slice by the bound view's per-sensor widths. Foot-contact and arm-touch
+        # sensors are 1-wide in the MJCF; fixed 3-wide offsets would silently
+        # repoint the gait/contact rewards at neighbouring channels.
+        slices: dict[str, slice] = {}
+        offset = 0
+        for name, width in zip(self._views.names, self._views.dimensions, strict=True):
+            slices[name] = slice(offset, offset + width)
+            offset += width
+        self._slices = slices
+        for name in self._feet_pos_names:
+            width = self._slices[name].stop - self._slices[name].start
+            if width != 3:
+                raise ValueError(
+                    f"Go2Arm reward expects a 3-wide foot position sensor '{name}', "
+                    f"got width {width}"
+                )
         self._ee_view = env.scene.bind_sensor_data((self._task_cfg.sensor.ee_local_pos,))
         self._entity: Entity = env.scene["robot"]
         self._torque_view = None
@@ -527,29 +605,18 @@ class Go2ArmReward(ManagerTermBase):
         cfg = self._task_cfg.reward_parameters
         command = _command(env)
         sensors = np.asarray(self._views.read(), dtype=get_global_dtype())
-        linvel = sensors[:, 0:3]
-        gyro = sensors[:, 3:6]
-        gravity = sensors[:, 6:9]
-        offset = 9
-        feet_force_count = len(self._task_cfg.sensor.feet_force)
-        feet_pos_count = len(self._task_cfg.sensor.feet_pos)
+        linvel = sensors[:, self._slices[self._task_cfg.sensor.local_linvel]]
+        gyro = sensors[:, self._slices[self._task_cfg.sensor.gyro]]
+        gravity = sensors[:, self._slices[_UPVECTOR_SENSOR]]
         feet_force = np.stack(
-            [
-                sensors[:, offset + index * 3 : offset + (index + 1) * 3]
-                for index in range(feet_force_count)
-            ],
-            axis=1,
+            [sensors[:, self._slices[name]] for name in self._feet_force_names], axis=1
         )
-        offset += feet_force_count * 3
         feet_pos = np.stack(
-            [
-                sensors[:, offset + index * 3 : offset + (index + 1) * 3]
-                for index in range(feet_pos_count)
-            ],
-            axis=1,
+            [sensors[:, self._slices[name]] for name in self._feet_pos_names], axis=1
         )
-        offset += feet_pos_count * 3
-        contacts = sensors[:, offset:]
+        contacts = np.stack(
+            [sensors[:, self._slices[name]] for name in _ARM_TOUCH_SENSORS], axis=1
+        )
         ee_pos = np.asarray(self._ee_view.read(), dtype=get_global_dtype())
         joint_pos = self._entity.data.joint_pos
         joint_vel = self._entity.data.joint_vel
@@ -560,6 +627,7 @@ class Go2ArmReward(ManagerTermBase):
             value = np.exp(
                 -np.sum(np.square(cmd[:, :2] - linvel[:, :2]), axis=1) / cfg.tracking_sigma
             )
+            command.record_tracking(value)
         elif name == "tracking_ang_vel":
             value = np.exp(-np.square(cmd[:, 2] - gyro[:, 2]) / cfg.tracking_sigma)
         elif name == "lin_vel_z":
@@ -607,15 +675,15 @@ class Go2ArmReward(ManagerTermBase):
         elif name == "swing_feet_z":
             swing = command.feet_phase >= 0.6
             error = np.square(feet_pos[:, :, 2] - cfg.target_foot_height)
-            value = np.sum(np.exp(-error / 0.01) * swing, axis=1) / feet_pos_count
+            value = np.sum(np.exp(-error / 0.01) * swing, axis=1) / len(self._feet_pos_names)
         elif name == "foot_drag":
-            contact = feet_force[:, :, 2] < 0.5
+            contact = feet_force[:, :, -1] < 0.5
             height_error = np.clip(cfg.target_foot_height / 2.0 - feet_pos[:, :, 2], 0.0, None)
             value = np.sum(np.square(height_error) * contact, axis=1)
         elif name == "contact":
-            contact = feet_force[:, :, 2] > 0.1
+            contact = feet_force[:, :, -1] > 0.1
             stance = (command.feet_phase < 0.6) | (command.gait_frequency < 1.0e-8)
-            value = np.sum(contact == stance, axis=1) / feet_force_count
+            value = np.sum(contact == stance, axis=1) / len(self._feet_force_names)
         elif name == "object_distance":
             value = np.exp(
                 -np.sum(np.square(ee_pos - command.curr_ee_goal_cart), axis=1) / cfg.object_sigma
@@ -623,7 +691,7 @@ class Go2ArmReward(ManagerTermBase):
         elif name == "object_distance_l2":
             value = np.sum(np.square(ee_pos - command.curr_ee_goal_cart), axis=1)
         elif name == "arm_collision":
-            value = np.sum(contacts, axis=1)
+            value = np.sum(contacts[:, :, 0], axis=1)
         else:
             raise KeyError(f"Unknown Go2Arm reward term '{name or self._name}'")
         return np.asarray(value, dtype=get_global_dtype())

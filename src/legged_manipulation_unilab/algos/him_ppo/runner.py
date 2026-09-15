@@ -266,7 +266,7 @@ class HIMOnPolicyRunner:
 
             def forward(self, obs_history: torch.Tensor) -> torch.Tensor:
                 vel, latent = self.estimator.get_latent(obs_history)
-                actor_input = torch.cat((obs_history[:, :num_one_step_obs], vel, latent), dim=-1)
+                actor_input = torch.cat((obs_history[:, -num_one_step_obs:], vel, latent), dim=-1)
                 return self.actor_mlp(actor_input)
 
         model = _PolicyExport().eval()

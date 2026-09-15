@@ -57,6 +57,7 @@ def test_him_owner_only_selects_manager_supported_reward_terms():
         "stand_still",
         "contact",
         "swing_feet_z",
+        "foot_drag",
         "object_distance",
         "object_distance_l2",
         "arm_collision",
