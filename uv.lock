@@ -531,10 +531,10 @@ requires-dist = [
     { name = "tensordict", specifier = "==0.14.1" },
     { name = "torch", marker = "platform_machine != 'x86_64' or sys_platform != 'linux'", specifier = "==2.8.0" },
     { name = "torch", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'", specifier = "==2.8.0", index = "https://download.pytorch.org/whl/cu128" },
-    { name = "unilab", git = "https://github.com/Motphys/UniLab.git?rev=09826339cca34f55f21edc2783669dfc9e9a59fd" },
-    { name = "unilab", extras = ["motrix"], marker = "extra == 'motrix'", git = "https://github.com/Motphys/UniLab.git?rev=09826339cca34f55f21edc2783669dfc9e9a59fd" },
-    { name = "unilab", extras = ["mujoco"], marker = "extra == 'mujoco'", git = "https://github.com/Motphys/UniLab.git?rev=09826339cca34f55f21edc2783669dfc9e9a59fd" },
-    { name = "unilab-rl", git = "https://github.com/unilabsim/unilab_rl.git?rev=79418e0cbff7b95fe6e49709b194454701ba20fa" },
+    { name = "unilab", specifier = "==1.3.0" },
+    { name = "unilab", extras = ["motrix"], marker = "extra == 'motrix'", specifier = "==1.3.0" },
+    { name = "unilab", extras = ["mujoco"], marker = "extra == 'mujoco'", specifier = "==1.3.0" },
+    { name = "unilab-rl", specifier = "==1.2.0" },
 ]
 provides-extras = ["mujoco", "motrix", "export"]
 
@@ -660,15 +660,15 @@ wheels = [
 
 [[package]]
 name = "mjbatch-uni"
-version = "0.2.0"
+version = "0.2.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mujoco" },
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fa/d7/0353b4cff9aa3dbc87ba194514f27b11a81155df684c2259adde8b3f6d7b/mjbatch_uni-0.2.0.tar.gz", hash = "sha256:0e883d307f33636daaa8ed92f729c67c2ca67a5ae54b12114ef40baebf052006", size = 38231, upload-time = "2026-09-13T15:10:57.024Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/34/a2/c18e9faf301582adbe717bcb6a2c4e3a37cd823cce1e7f7cd09ed6f78054/mjbatch_uni-0.2.1.tar.gz", hash = "sha256:1e0b1e519ea3663896c2110ca74b18af9893fc956e962c74210ce253c6dddbd1", size = 40620, upload-time = "2026-09-14T11:57:01.89Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/18/48/e8d64f0e00c56e36b5ed9351e7e62129c83bacff19bbe55d53844aefa89e/mjbatch_uni-0.2.0-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:f9f40fcae35da5d8a29448bdfa62fac70c9b69440e10056f3d1e3061b400c9c9", size = 184436, upload-time = "2026-09-13T15:10:55.814Z" },
+    { url = "https://files.pythonhosted.org/packages/a8/46/24ab7269337d59b2a4aa56b0a3a19b9a0705ab3493ca5cf35dbae4177263/mjbatch_uni-0.2.1-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:1015c207179989a2b7c5324e1a684b26272dffb1ab056ada03d6ebbb0d2f4208", size = 188406, upload-time = "2026-09-14T11:57:00.567Z" },
 ]
 
 [[package]]
@@ -1507,8 +1507,8 @@ wheels = [
 
 [[package]]
 name = "unilab"
-version = "1.2.0"
-source = { git = "https://github.com/Motphys/UniLab.git?rev=09826339cca34f55f21edc2783669dfc9e9a59fd#09826339cca34f55f21edc2783669dfc9e9a59fd" }
+version = "1.3.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "etils" },
     { name = "gymnasium" },
@@ -1536,6 +1536,10 @@ dependencies = [
     { name = "unisim-core" },
     { name = "wandb" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/8b/89/e1e6fa2433b64a26e4fbbc4c8e77eb228aef4776599f0a8a6a52df377e47/unilab-1.3.0.tar.gz", hash = "sha256:c5f9c8671d919d79562dd1b646f80e57a121c3b582387ef573663f228e82c214", size = 959974, upload-time = "2026-09-14T14:11:13.403Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c8/a7/d1d417038b3aaf473bde59d26e148e7dbe2abe4071e982f209a866181fee/unilab-1.3.0-py3-none-any.whl", hash = "sha256:57d66b3150a78376915ee111a4867055dba547abd144152451573180c54eb209", size = 1163390, upload-time = "2026-09-14T14:11:11.811Z" },
+]
 
 [package.optional-dependencies]
 motrix = [
@@ -1549,7 +1553,7 @@ mujoco = [
 [[package]]
 name = "unilab-rl"
 version = "1.2.0"
-source = { git = "https://github.com/unilabsim/unilab_rl.git?rev=79418e0cbff7b95fe6e49709b194454701ba20fa#79418e0cbff7b95fe6e49709b194454701ba20fa" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "hydra-core" },
     { name = "numpy" },
@@ -1562,15 +1566,19 @@ dependencies = [
     { name = "torch" },
     { name = "wandb" },
 ]
+sdist = { url = "https://files.pythonhosted.org/packages/f5/9d/7a646bc044cadb48cbd1d0c58832faf59e037a45f22432cff2a7ad5a7b01/unilab_rl-1.2.0.tar.gz", hash = "sha256:bb8b1c713b961ea4b24ea72c39d443e057531e71882fa058502af947b98768da", size = 148289, upload-time = "2026-09-10T05:20:52.549Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/58/67/0ea1fb5f0c9a7e8604b0415b018deb3286024191a84d357f1b3221d2a41d/unilab_rl-1.2.0-py3-none-any.whl", hash = "sha256:617317dcca581d1af2daec36d50de7214067dd34f5d85a4f02d7cd38de1df611", size = 183372, upload-time = "2026-09-10T05:20:51.254Z" },
+]
 
 [[package]]
 name = "unisim-core"
-version = "1.3.0"
+version = "1.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0f/f2/eab9d0ec83763cda631e978d805cb451187fb6b4ee6addde636d74ad3c48/unisim_core-1.3.0.tar.gz", hash = "sha256:17ddf3c4b0799d920f565ad30aa545b554e91167be79f1ea8fcbb790a9341463", size = 262820, upload-time = "2026-09-13T15:36:43.82Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fa/cf/639036c780e264389d54f30e58c0a862d52b724be6f17cc62cba5bb9780a/unisim_core-1.4.0.tar.gz", hash = "sha256:cc7db53d779af7b1612615aa3a0216575a3236f508520b63d358f86af326adee", size = 266406, upload-time = "2026-09-14T13:08:44.977Z" }
 
 [[package]]
 name = "urllib3"
