@@ -407,6 +407,35 @@ def test_go2_arm_tracking_reward_records_curriculum_progress():
 
 
 @pytest.mark.slow
+def test_go2_arm_motrix_framequat_reads_wxyz():
+    """MotrixSim framequat sensors emit xyzw; the task must normalize to wxyz.
+
+    A garbage base rotation silently destabilizes the arm IK (20+ rad/s
+    thrashing) while every other channel stays healthy.
+    """
+    pytest.importorskip("motrixsim", reason="Motrix backend not installed")
+    from legged_manipulation_unilab.tasks.go2_arm.manager_env import _sensor_quat_wxyz
+    from unilab.base.config_adapter import create_env
+    from unilab.scripts.train_rsl_rl import build_ppo_env_cfg_override
+
+    cfg = compose_config("ppo", "motrix", [])
+    cfg.algo.num_envs = 1
+    env = create_env(cfg, num_envs=1, env_cfg_override=build_ppo_env_cfg_override(cfg))
+    try:
+        env.reset()
+        env.step(np.zeros((1, 18), dtype=np.float32))
+        quat = _sensor_quat_wxyz(
+            env._backend, env._backend.get_sensor_data("armbasepoint_world_quat")
+        )
+        # Upright reset: wxyz = (cos(yaw/2), 0, 0, sin(yaw/2)).
+        assert abs(quat[0, 0] ** 2 + quat[0, 3] ** 2) > 0.9
+        assert abs(quat[0, 1]) < 0.1
+        assert abs(quat[0, 2]) < 0.1
+    finally:
+        env.close()
+
+
+@pytest.mark.slow
 def test_go2_arm_ee_goal_world_available_for_play_overlay():
     pytest.importorskip("mujoco", reason="mujoco not installed")
     env = _make_env(num_envs=2)

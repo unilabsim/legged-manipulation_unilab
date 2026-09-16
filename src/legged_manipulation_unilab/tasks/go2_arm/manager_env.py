@@ -40,6 +40,22 @@ def _command(env: Any) -> "Go2ArmManipLocoCommand":
 
 _UPVECTOR_SENSOR = "upvector"
 
+
+def _sensor_quat_wxyz(backend: Any, quat: np.ndarray) -> np.ndarray:
+    """Return a framequat sensor reading in the wxyz contract order.
+
+    MotrixSim emits framequat sensor values in xyzw order.  unisim's motrix
+    backend normalizes body-track and free-joint quaternions to wxyz but not
+    named framequat sensors, while the mujoco path already emits wxyz; without
+    this flip the arm IK rotates its Jacobian with a garbage base frame and
+    saturates ``dq_clip`` every step (20+ rad/s arm thrashing).  Remove once
+    the backend converts framequat sensors upstream.
+    """
+    if backend.backend_type == "motrix":
+        quat = np.asarray(quat, dtype=get_global_dtype())[:, [3, 0, 1, 2]]
+    return quat
+
+
 _ARM_TOUCH_SENSORS = (
     "arm_touch_base",
     "arm_touch_link1",
@@ -124,8 +140,9 @@ class Go2ArmIKAction(ActionTerm):
             arm_target = np.broadcast_to(default[:, 12:18], (self.num_envs, 6)).copy()
         else:
             command = _command(self._env)
+            backend = getattr(self._env, "_backend")
             ee_pos = np.asarray(self._ee_pos_view.read(), dtype=get_global_dtype())
-            ee_quat = np.asarray(self._ee_quat_view.read(), dtype=get_global_dtype())
+            ee_quat = _sensor_quat_wxyz(backend, self._ee_quat_view.read())
             arm_pos = self._entity.data.joint_pos[:, self._joint_ids[self._arm_rows]]
             dq = self._compute_arm_ik_delta(
                 command.curr_ee_goal_cart,
@@ -161,7 +178,7 @@ class Go2ArmIKAction(ActionTerm):
             self._arm_dof_ids,
         )
         ref_rot_w = np_matrix_from_quat(
-            np.asarray(self._arm_ref_quat_view.read(), dtype=get_global_dtype())
+            _sensor_quat_wxyz(backend, self._arm_ref_quat_view.read())
         )
         rot_w_to_b = np.swapaxes(ref_rot_w, 1, 2)
         jacp_b = np.matmul(rot_w_to_b, jacp_w)
@@ -336,7 +353,7 @@ class Go2ArmManipLocoCommand(CommandTerm):
 
     def post_compute(self) -> None:
         pos = np.asarray(self._goal_view.read(), dtype=get_global_dtype())
-        quat = np.asarray(self._goal_quat_view.read(), dtype=get_global_dtype())
+        quat = _sensor_quat_wxyz(self._env._backend, self._goal_quat_view.read())
         rotation = np_matrix_from_quat(quat)
         self.curr_ee_goal_world[:] = pos + np.einsum("nij,nj->ni", rotation, self.curr_ee_goal_cart)
 
