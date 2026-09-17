@@ -407,6 +407,66 @@ def test_go2_arm_tracking_reward_records_curriculum_progress():
 
 
 @pytest.mark.slow
+def test_go2_arm_play_profile_scene_keeps_home_keyframe():
+    """The play-profile adapter rebuilds the scene around the materialized
+    model as a bare SceneCfg without default_keyframe_name; without the
+    factory invariant the eval/play env silently reverts to all-zero qpos0
+    defaults and every policy falls at spawn."""
+    pytest.importorskip("mujoco", reason="mujoco not installed")
+    from unilab.base.scene import SceneCfg
+
+    _ensure_registered()
+    registry = _registry_module()
+    bare_scene = SceneCfg(model_file=str(ASSETS_ROOT_PATH / "robots/go2_arm/scene_flat.xml"))
+    env = registry.make(
+        "Go2ArmManipLoco",
+        sim_backend="mujoco",
+        num_envs=1,
+        env_cfg_override={
+            "rewards": _reward_override(),
+            "reward_parameters": {"tracking_sigma": 0.25, "base_height_target": 0.3},
+            "domain_rand": dict(_DISABLED_DOMAIN_RAND),
+            "scene": bare_scene,
+        },
+    )
+    try:
+        assert env._cfg.scene.default_keyframe_name == "home"
+        default_joint_pos = np.asarray(env.scene["robot"].data.default_joint_pos)[0, :3]
+        np.testing.assert_allclose(default_joint_pos, [0.1, 0.8, -1.5], atol=1e-6)
+    finally:
+        env.close()
+
+
+@pytest.mark.slow
+def test_go2_arm_motrix_framequat_reads_wxyz():
+    """MotrixSim framequat sensors emit xyzw; the task must normalize to wxyz.
+
+    A garbage base rotation silently destabilizes the arm IK (20+ rad/s
+    thrashing) while every other channel stays healthy.
+    """
+    pytest.importorskip("motrixsim", reason="Motrix backend not installed")
+    from legged_manipulation_unilab.tasks.go2_arm.manager_env import _sensor_quat_wxyz
+    from unilab.base.config_adapter import create_env
+    from unilab.scripts.train_rsl_rl import build_ppo_env_cfg_override
+
+    cfg = compose_config("ppo", "motrix", [])
+    cfg.algo.num_envs = 1
+    env = create_env(cfg, num_envs=1, env_cfg_override=build_ppo_env_cfg_override(cfg))
+    try:
+        env.reset()
+        env.step(np.zeros((1, 18), dtype=np.float32))
+        quat = _sensor_quat_wxyz(
+            env._backend, env._backend.get_sensor_data("armbasepoint_world_quat")
+        )
+        # Upright reset: wxyz = (cos(yaw/2), 0, 0, sin(yaw/2)).
+        assert abs(quat[0, 0] ** 2 + quat[0, 3] ** 2) > 0.9
+        assert abs(quat[0, 1]) < 0.1
+        assert abs(quat[0, 2]) < 0.1
+    finally:
+        env.close()
+
+
+@pytest.mark.slow
 def test_go2_arm_ee_goal_world_available_for_play_overlay():
     pytest.importorskip("mujoco", reason="mujoco not installed")
     env = _make_env(num_envs=2)

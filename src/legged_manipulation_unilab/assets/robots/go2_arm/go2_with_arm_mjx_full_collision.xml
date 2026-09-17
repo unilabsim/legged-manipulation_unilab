@@ -386,13 +386,17 @@
     <general class="hip" name="RR_thigh" joint="RR_thigh_joint"/>
     <general class="knee" name="RR_calf" joint="RR_calf_joint"/>
     <!-- Airbot Play actuators -->
-    <!-- kp/kv 由 ControlConfig.arm_Kp/arm_Kd 通过 position_actuator_gains 在运行时写入，XML 不重复定义 -->
-    <position name="joint1" joint="joint1" class="joint1" forcerange="-24 24" forcelimited="true" ctrllimited="true"/>
-    <position name="joint2" joint="joint2" class="joint2" forcerange="-24 24" forcelimited="true" ctrllimited="true"/>
-    <position name="joint3" joint="joint3" class="joint3" forcerange="-24 24" forcelimited="true" ctrllimited="true"/>
-    <position name="joint4" joint="joint4" class="joint4" forcerange="-8 8" forcelimited="true" ctrllimited="true"/>
-    <position name="joint5" joint="joint5" class="joint5" forcerange="-8 8" forcelimited="true" ctrllimited="true"/>
-    <position name="joint6" joint="joint6" class="joint6" forcerange="-8 8" forcelimited="true" ctrllimited="true"/>
+    <!-- kp/kv also live here (matching ControlConfig.arm_kp/arm_kd): motrix
+         drops the position_actuator_gains override for models that are not
+         all-position-actuator (the 12 general leg actuators fail its gate),
+         so without XML gains motrix runs the arm at the class fallback
+         kp=35 and the arm IK cannot close its error. -->
+    <position name="joint1" joint="joint1" class="joint1" kp="95" kv="3.5" forcerange="-24 24" forcelimited="true" ctrllimited="true"/>
+    <position name="joint2" joint="joint2" class="joint2" kp="115" kv="3.8" forcerange="-24 24" forcelimited="true" ctrllimited="true"/>
+    <position name="joint3" joint="joint3" class="joint3" kp="100" kv="2.5" forcerange="-24 24" forcelimited="true" ctrllimited="true"/>
+    <position name="joint4" joint="joint4" class="joint4" kp="52" kv="1.5" forcerange="-8 8" forcelimited="true" ctrllimited="true"/>
+    <position name="joint5" joint="joint5" class="joint5" kp="54" kv="1.5" forcerange="-8 8" forcelimited="true" ctrllimited="true"/>
+    <position name="joint6" joint="joint6" class="joint6" kp="55" kv="1.5" forcerange="-8 8" forcelimited="true" ctrllimited="true"/>
   <!-- <position name='gripper' tendon='gripper_gear' ctrllimited="true" ctrlrange="0. 1." kp="3" user="1" forcelimited="true" forcerange="-1 1"/> -->
   </actuator>
 

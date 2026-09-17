@@ -266,6 +266,14 @@ def play_him_ppo(cfg: DictConfig, device: str) -> str | None:
                 base_quat_w=np.asarray(env.scene["robot"].data.root_link_quat_w),
             )
 
+        # Only the MuJoCo offline snapshot pipeline draws overlay primitives;
+        # motrix playback rejects them, so honor the declared capability.
+        backend = getattr(env, "_backend", None)
+        supports_overlay = bool(
+            backend is not None
+            and getattr(backend.get_play_capabilities(), "supports_debug_overlay", False)
+        )
+
         with torch.inference_mode():
             render_play_mode(
                 env,
@@ -286,7 +294,7 @@ def play_him_ppo(cfg: DictConfig, device: str) -> str | None:
                     "cam_tracking_env_idx": getattr(cfg.training, "cam_tracking_env_idx", 0),
                     "cam_tracking_extra_envs": getattr(cfg.training, "cam_tracking_extra_envs", 2),
                 },
-                debug_overlay_getter=_play_overlays,
+                debug_overlay_getter=_play_overlays if supports_overlay else None,
             )
         print("Done.")
         return str(output_video)

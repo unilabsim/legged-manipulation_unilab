@@ -26,7 +26,7 @@ reward:
       name: tracking_lin_vel
   tracking_ang_vel:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: 0.5
+    weight: 1.0
     params:
       name: tracking_ang_vel
   lin_vel_z:
@@ -51,17 +51,17 @@ reward:
       name: base_height
   leg_pose:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -0.1
+    weight: -1.0
     params:
       name: leg_pose
   action_rate:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -0.005
+    weight: -0.02
     params:
       name: action_rate
   stand_still:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -0.5
+    weight: -0.8
     params:
       name: stand_still
   contact:
@@ -71,12 +71,12 @@ reward:
       name: contact
   swing_feet_z:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: 4.0
+    weight: 10.0
     params:
       name: swing_feet_z
   foot_drag:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -0.1
+    weight: -0.5
     params:
       name: foot_drag
   object_distance:
@@ -155,6 +155,7 @@ env:
       - 0.8
     zero_command_prob: 0.15
     resample_time_s: 4.0
+    gait_frequency: 2.0
   curriculum_config:
     enable: false
   domain_rand:
@@ -205,6 +206,7 @@ env:
     tracking_sigma: 0.25
     base_height_target: 0.3
     object_sigma: 0.1
+    target_foot_height: 0.1
 play_profile:
   enabled: true
   env:
