@@ -28,7 +28,7 @@ robot data does not need to be downloaded from Hugging Face before training.
 
 ### Showcase
 
-PPO playback on MuJoCo: velocity-command tracking (blue arrow), IK-driven arm
+HIM-PPO playback on MuJoCo: velocity-command tracking (blue arrow), IK-driven arm
 following the sampled EE goal (red sphere).
 
 ![showcase](docs/assets/showcase.gif)

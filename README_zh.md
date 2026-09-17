@@ -27,7 +27,7 @@ HIM-PPO 两种训练方案。
 
 ### 展示
 
-MuJoCo 上的 PPO 回放:速度指令跟踪(蓝色箭头),IK 驱动的机械臂跟踪采样的
+MuJoCo 上的 HIM-PPO 回放:速度指令跟踪(蓝色箭头),IK 驱动的机械臂跟踪采样的
 末端目标(红色球)。
 
 ![showcase](docs/assets/showcase.gif)
