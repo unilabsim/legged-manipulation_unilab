@@ -407,6 +407,37 @@ def test_go2_arm_tracking_reward_records_curriculum_progress():
 
 
 @pytest.mark.slow
+def test_go2_arm_play_profile_scene_keeps_home_keyframe():
+    """The play-profile adapter rebuilds the scene around the materialized
+    model as a bare SceneCfg without default_keyframe_name; without the
+    factory invariant the eval/play env silently reverts to all-zero qpos0
+    defaults and every policy falls at spawn."""
+    pytest.importorskip("mujoco", reason="mujoco not installed")
+    from unilab.base.scene import SceneCfg
+
+    _ensure_registered()
+    registry = _registry_module()
+    bare_scene = SceneCfg(model_file=str(ASSETS_ROOT_PATH / "robots/go2_arm/scene_flat.xml"))
+    env = registry.make(
+        "Go2ArmManipLoco",
+        sim_backend="mujoco",
+        num_envs=1,
+        env_cfg_override={
+            "rewards": _reward_override(),
+            "reward_parameters": {"tracking_sigma": 0.25, "base_height_target": 0.3},
+            "domain_rand": dict(_DISABLED_DOMAIN_RAND),
+            "scene": bare_scene,
+        },
+    )
+    try:
+        assert env._cfg.scene.default_keyframe_name == "home"
+        default_joint_pos = np.asarray(env.scene["robot"].data.default_joint_pos)[0, :3]
+        np.testing.assert_allclose(default_joint_pos, [0.1, 0.8, -1.5], atol=1e-6)
+    finally:
+        env.close()
+
+
+@pytest.mark.slow
 def test_go2_arm_motrix_framequat_reads_wxyz():
     """MotrixSim framequat sensors emit xyzw; the task must normalize to wxyz.
 

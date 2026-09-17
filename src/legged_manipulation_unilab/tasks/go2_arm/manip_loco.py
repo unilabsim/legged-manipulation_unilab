@@ -392,6 +392,13 @@ def make_go2_arm_manip_loco_env(
     cfg.prepare_runtime()
     cfg.validate()
     cfg.scene.model_file = resolve_scene(cfg.scene.model_file)
+    # Every Go2Arm scene model declares the home keyframe and the task keys
+    # its default state to it. The play-profile adapter rebuilds the scene as
+    # a bare SceneCfg around the materialized model and drops the field, which
+    # silently reverts eval/play to the all-zero qpos0 defaults; re-assert the
+    # invariant after overrides have been applied.
+    if cfg.scene.default_keyframe_name is None:
+        cfg.scene.default_keyframe_name = _GO2_ARM_DEFAULT_KEYFRAME
     apply_env_cpu_runtime(cfg.cpu_ids)
     backend_kwargs: dict[str, Any] = {
         "base_name": cfg.asset.base_name,

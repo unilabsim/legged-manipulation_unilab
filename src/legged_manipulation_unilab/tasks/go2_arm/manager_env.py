@@ -596,7 +596,11 @@ class Go2ArmReward(ManagerTermBase):
         self._ee_view = env.scene.bind_sensor_data((self._task_cfg.sensor.ee_local_pos,))
         self._entity: Entity = env.scene["robot"]
         self._torque_view = None
-        if self._name in {"torques", "energy"}:
+        # Bind actuator-force sensors only when the term actually contributes:
+        # motrix does not implement jointactuatorfrc sensors at all, and
+        # zero-weight terms never evaluate, so binding them would fail env
+        # construction on motrix for terms that are disabled anyway.
+        if self._name in {"torques", "energy"} and float(cfg.weight) != 0.0:
             self._torque_view = env.scene.bind_sensor_data(
                 tuple(f"{joint_name}_torque" for joint_name in self._entity.joint_names)
             )
