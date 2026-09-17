@@ -1,0 +1,391 @@
+<mujoco model="l1_w_arm">
+  <!-- Kinematics/meshes: GENISOM ZSL-1W URDF.
+       Default pose / leg-wheel gains: robot_lab ZSIBOT_ZSL1W_CFG.
+       Airbot Play grafted from go2_arm. Arm mount pos="0 0 0.09" is an initial guess. -->
+  <compiler angle="radian" meshdir="." autolimits="true"/>
+
+  <option iterations="1" ls_iterations="5" timestep="0.004" integrator="Euler">
+    <flag eulerdamp="disable"/>
+  </option>
+
+  <default>
+    <default class="obj_visual">
+      <geom group="2" type="mesh" contype="0" conaffinity="0"/>
+    </default>
+    <default class="obj_collision">
+      <geom group="3" contype="1" conaffinity="1"/>
+    </default>
+
+    <default class="airbot_play">
+      <joint axis="0 0 1" armature="0.01" damping="1" frictionloss="5"/>
+      <position inheritrange="1" kp="35" forcerange="-18 18"/>
+      <default class="joint1">
+        <joint range="-3.1416 2.0944" actuatorfrcrange="-24 24" damping="0.2" frictionloss="1"/>
+      </default>
+      <default class="joint2">
+        <joint range="-2.9671 0.17453" actuatorfrcrange="-24 24" damping="0.2" frictionloss="1"/>
+      </default>
+      <default class="joint3">
+        <joint range="-0.087266 3.1416" actuatorfrcrange="-24 24" damping="0.2" frictionloss="1"/>
+      </default>
+      <default class="joint4">
+        <joint range="-3.0107 3.0107" actuatorfrcrange="-8 8" damping="0.1" frictionloss="0.5"/>
+        <position forcerange="-8 8"/>
+      </default>
+      <default class="joint5">
+        <joint range="-1.7628 1.7628" actuatorfrcrange="-8 8" damping="0.1" frictionloss="0.5"/>
+        <position forcerange="-8 8"/>
+      </default>
+      <default class="joint6">
+        <joint range="-3.0107 3.0107" actuatorfrcrange="-8 8" damping="0.1" frictionloss="0.5"/>
+        <position forcerange="-8 8"/>
+      </default>
+    </default>
+
+    <default class="zsl1w">
+      <geom friction="0.6" margin="0.001" condim="1"/>
+      <joint axis="0 1 0" damping="0.7" armature="0.01" frictionloss="0.0"/>
+      <general forcerange="-28 28" biastype="affine" gainprm="20 0 0" biasprm="0 -20 -0.7"/>
+      <default class="abad">
+        <joint axis="1 0 0" range="-0.4887 0.4887"/>
+        <general ctrlrange="-0.4887 0.4887"/>
+      </default>
+      <default class="hip">
+        <joint range="-1.152 2.967"/>
+        <general ctrlrange="-1.152 2.967"/>
+      </default>
+      <default class="knee">
+        <joint range="-2.723 -0.602"/>
+        <general ctrlrange="-2.723 -0.602"/>
+      </default>
+      <default class="wheel">
+        <joint limited="false" range="-100 100"/>
+      </default>
+      <default class="wheel_act">
+        <velocity kv="0.7" forcerange="-28 28" ctrlrange="-28 28"/>
+      </default>
+      <default class="visual">
+        <geom type="mesh" contype="0" conaffinity="0" group="2"/>
+      </default>
+      <default class="collision">
+        <geom group="3"/>
+      </default>
+      <default class="wheel_collision">
+        <geom group="3" condim="6" friction="0.8 0.02 0.01" priority="1"/>
+      </default>
+    </default>
+  </default>
+
+  <asset>
+    <material name="metal" rgba=".9 .95 .95 1"/>
+    <material name="black" rgba="0 0 0 1"/>
+    <material name="gray" rgba="0.671705 0.692426 0.774270 1"/>
+    <material name="Paint_Matte_Black" specular="0.5" shininess="0.5" rgba="0.00111266039 0.00111266039 0.00111266039 1.0"/>
+    <material name="Paint_Metallic_White" specular="0.5" shininess="0.5" rgba="0.928523183 0.928523183 0.928523123 1.0"/>
+    <material name="Gree_Light_Base" specular="0.5" shininess="0.5" rgba="0.6 1 1 1"/>
+    <mesh name="BASE_LINK" file="meshes/BASE_LINK.STL"/>
+    <mesh name="FL_ABAD_LINK" file="meshes/FL_ABAD_LINK.STL"/>
+    <mesh name="FL_HIP_LINK" file="meshes/FL_HIP_LINK.STL"/>
+    <mesh name="FL_KNEE_LINK" file="meshes/FL_KNEE_LINK.STL"/>
+    <mesh name="FL_FOOT_LINK" file="meshes/FL_FOOT_LINK.STL"/>
+    <mesh name="FR_ABAD_LINK" file="meshes/FR_ABAD_LINK.STL"/>
+    <mesh name="FR_HIP_LINK" file="meshes/FR_HIP_LINK.STL"/>
+    <mesh name="FR_KNEE_LINK" file="meshes/FR_KNEE_LINK.STL"/>
+    <mesh name="FR_FOOT_LINK" file="meshes/FR_FOOT_LINK.STL"/>
+    <mesh name="RR_ABAD_LINK" file="meshes/RR_ABAD_LINK.STL"/>
+    <mesh name="RR_HIP_LINK" file="meshes/RR_HIP_LINK.STL"/>
+    <mesh name="RR_KNEE_LINK" file="meshes/RR_KNEE_LINK.STL"/>
+    <mesh name="RR_FOOT_LINK" file="meshes/RR_FOOT_LINK.STL"/>
+    <mesh name="RL_ABAD_LINK" file="meshes/RL_ABAD_LINK.STL"/>
+    <mesh name="RL_HIP_LINK" file="meshes/RL_HIP_LINK.STL"/>
+    <mesh name="RL_KNEE_LINK" file="meshes/RL_KNEE_LINK.STL"/>
+    <mesh name="RL_FOOT_LINK" file="meshes/RL_FOOT_LINK.STL"/>
+    
+    <mesh name="arm_base_0" file="../go2_arm/assets/arm_base_0.obj"/>
+    <mesh name="arm_base_1" file="../go2_arm/assets/arm_base_1.obj"/>
+    <mesh name="link1" file="../go2_arm/assets/link1.obj"/>
+    <mesh name="link2_0" file="../go2_arm/assets/link2_0.obj"/>
+    <mesh name="link2_1" file="../go2_arm/assets/link2_1.obj"/>
+    <mesh name="link3_0" file="../go2_arm/assets/link3_0.obj"/>
+    <mesh name="link3_1" file="../go2_arm/assets/link3_1.obj"/>
+    <mesh name="link4" file="../go2_arm/assets/link4.obj"/>
+    <mesh name="link5_0" file="../go2_arm/assets/link5_0.obj"/>
+    <mesh name="link5_1" file="../go2_arm/assets/link5_1.obj"/>
+    <mesh name="link6" file="../go2_arm/assets/link6.obj"/>
+    <mesh name="left" file="../go2_arm/assets/left.obj"/>
+    <mesh name="right" file="../go2_arm/assets/right.obj"/>
+  </asset>
+
+  <worldbody>
+    <body name="BASE_LINK" pos="0 0 0.4" childclass="zsl1w">
+      <inertial pos="0.0050538027 -0.000631701 0.0050408732" mass="6.7155497" fullinertia="0.030172666 0.088387421 0.10431072 -0.00028335181 0.000084157847 -0.00056913307"/>
+      <freejoint/>
+      <geom mesh="BASE_LINK" class="visual"/>
+      <geom name="base_collision" class="collision" type="box" size="0.20 0.08 0.06"/>
+      <site name="imu" pos="0 0 0.05"/>
+      
+      <body name="FL_ABAD_LINK" pos="0.17449 0.062 0">
+        <inertial pos="-0.027074453 -0.015458828 0.0000094167931" mass="0.45409769" fullinertia="0.000251027 0.0004874808 0.00054102144 0.000153060 0.0000000321747 -0.0000000208886"/>
+        <joint name="FBL_ABAD_JOINT" class="abad"/>
+        <geom mesh="FL_ABAD_LINK" class="visual"/>
+        <body name="FL_HIP_LINK" pos="0 0.097412 0">
+          <inertial pos="-0.0018322311 -0.050798328 -0.01620581" mass="1.34038" fullinertia="0.0055878127 0.0036181265 0.0028642756 0.000140269 -0.000271226 0.0011403235"/>
+          <joint name="FBL_HIP_JOINT" class="hip"/>
+          <geom mesh="FL_HIP_LINK" class="visual"/>
+          <geom name="FBL_hip_col" class="collision" type="box" size="0.02 0.01 0.09" pos="-0.01 0 -0.06" euler="0 0.2 0"/>
+          <body name="FL_KNEE_LINK" pos="0 0 -0.2">
+            <inertial pos="0.00296222 -0.01016197 -0.18400768" mass="0.76510830" fullinertia="0.00433034 0.00438029 0.00042299 -0.00001722 -0.00011502 -0.00027115"/>
+            <joint name="FBL_KNEE_JOINT" class="knee"/>
+            <geom mesh="FL_KNEE_LINK" class="visual"/>
+            <geom name="FBL_knee_col" class="collision" type="box" size="0.01 0.01 0.055" pos="0.021 0 -0.06" euler="0 -0.18 0"/>
+            <body name="FL_FOOT_LINK" pos="0 0 -0.21366">
+              <inertial pos="0 0.04488028 0" mass="0.90130429" fullinertia="0.00142854 0.00247230 0.00142858 0 0 0"/>
+              <joint name="FBL_FOOT_JOINT" class="wheel"/>
+              <geom mesh="FL_FOOT_LINK" class="visual"/>
+              <geom name="FBL_FOOT" class="wheel_collision" type="cylinder" size="0.05 0.02" euler="1.5708 0 0"/>
+              <site name="FBL_FOOT" pos="0 0 0" size="0.02" group="5"/>
+            </body>
+          </body>
+        </body>
+      </body>
+
+      <body name="FR_ABAD_LINK" pos="0.1745 -0.062 0">
+        <inertial pos="-0.027074453 0.015458828 -0.0000094167931" mass="0.45409769" fullinertia="0.000251027 0.0004874808 0.00054102144 -0.000153060 -0.0000000321747 -0.0000000208886"/>
+        <joint name="FAR_ABAD_JOINT" class="abad"/>
+        <geom mesh="FR_ABAD_LINK" class="visual"/>
+        <body name="FR_HIP_LINK" pos="0 -0.097399 0">
+          <inertial pos="-0.0018322311 0.050798328 -0.01620581" mass="1.34038" fullinertia="0.0055878127 0.0036181265 0.0028642756 -0.000140269 -0.000271226 -0.0011403235"/>
+          <joint name="FAR_HIP_JOINT" class="hip"/>
+          <geom mesh="FR_HIP_LINK" class="visual"/>
+          <geom name="FAR_hip_col" class="collision" type="box" size="0.02 0.01 0.09" pos="-0.01 0 -0.06" euler="0 0.2 0"/>
+          <body name="FR_KNEE_LINK" pos="0 0 -0.2">
+            <inertial pos="0.00294408 0.01016197 -0.18399731" mass="0.76510852" fullinertia="0.00432973 0.00437978 0.00042308 0.00001787 -0.00011551 0.00027077"/>
+            <joint name="FAR_KNEE_JOINT" class="knee"/>
+            <geom mesh="FR_KNEE_LINK" class="visual"/>
+            <geom name="FAR_knee_col" class="collision" type="box" size="0.01 0.01 0.055" pos="0.021 0 -0.06" euler="0 -0.18 0"/>
+            <body name="FR_FOOT_LINK" pos="0 0 -0.21366">
+              <inertial pos="0 -0.04488028 0" mass="0.90130429" fullinertia="0.00142854 0.00247230 0.00142858 0 0 0"/>
+              <joint name="FAR_FOOT_JOINT" class="wheel"/>
+              <geom mesh="FR_FOOT_LINK" class="visual"/>
+              <geom name="FAR_FOOT" class="wheel_collision" type="cylinder" size="0.05 0.02" euler="1.5708 0 0"/>
+              <site name="FAR_FOOT" pos="0 0 0" size="0.02" group="5"/>
+            </body>
+          </body>
+        </body>
+      </body>
+
+      <body name="RR_ABAD_LINK" pos="-0.1745 -0.062 0">
+        <inertial pos="0.027074453 0.015458828 0.0000094167931" mass="0.45409769" fullinertia="0.000251027 0.0004874808 0.00054102144 0.000153060 -0.0000000321747 0.0000000208886"/>
+        <joint name="RAR_ABAD_JOINT" class="abad"/>
+        <geom mesh="RR_ABAD_LINK" class="visual"/>
+        <body name="RR_HIP_LINK" pos="0 -0.09735 0">
+          <inertial pos="-0.0018322311 0.050798328 -0.01620581" mass="1.34038" fullinertia="0.0055878127 0.0036181265 0.0028642756 -0.000140269 -0.000271226 -0.0011403235"/>
+          <joint name="RAR_HIP_JOINT" class="hip"/>
+          <geom mesh="RR_HIP_LINK" class="visual"/>
+          <geom name="RAR_hip_col" class="collision" type="box" size="0.02 0.01 0.09" pos="-0.01 0 -0.06" euler="0 0.2 0"/>
+          <body name="RR_KNEE_LINK" pos="0 0 -0.2">
+            <inertial pos="0.00294408 0.01016197 -0.18399731" mass="0.76510852" fullinertia="0.00432973 0.00437978 0.00042308 0.00001787 -0.00011551 0.00027077"/>
+            <joint name="RAR_KNEE_JOINT" class="knee"/>
+            <geom mesh="RR_KNEE_LINK" class="visual"/>
+            <geom name="RAR_knee_col" class="collision" type="box" size="0.01 0.01 0.055" pos="0.021 0 -0.06" euler="0 -0.18 0"/>
+            <body name="RR_FOOT_LINK" pos="0 0 -0.21366">
+              <inertial pos="0 -0.04488028 0" mass="0.90130429" fullinertia="0.00142854 0.00247230 0.00142858 0 0 0"/>
+              <joint name="RAR_FOOT_JOINT" class="wheel"/>
+              <geom mesh="RR_FOOT_LINK" class="visual"/>
+              <geom name="RAR_FOOT" class="wheel_collision" type="cylinder" size="0.05 0.02" euler="1.5708 0 0"/>
+              <site name="RAR_FOOT" pos="0 0 0" size="0.02" group="5"/>
+            </body>
+          </body>
+        </body>
+      </body>
+
+      <body name="RL_ABAD_LINK" pos="-0.1745 0.062 0">
+        <inertial pos="0.027074453 -0.015458828 -0.0000094167931" mass="0.45409769" fullinertia="0.000251027 0.0004874808 0.00054102144 -0.000153060 -0.0000000321747 -0.0000000208886"/>
+        <joint name="RBL_ABAD_JOINT" class="abad"/>
+        <geom mesh="RL_ABAD_LINK" class="visual"/>
+        <body name="RL_HIP_LINK" pos="0 0.09735 0">
+          <inertial pos="-0.0018322311 -0.050798328 -0.01620581" mass="1.34038" fullinertia="0.0055878127 0.0036181265 0.0028642756 0.000140269 -0.000271226 0.0011403235"/>
+          <joint name="RBL_HIP_JOINT" class="hip"/>
+          <geom mesh="RL_HIP_LINK" class="visual"/>
+          <geom name="RBL_hip_col" class="collision" type="box" size="0.02 0.01 0.09" pos="-0.01 0 -0.06" euler="0 0.2 0"/>
+          <body name="RL_KNEE_LINK" pos="0 0 -0.2">
+            <inertial pos="0.00296222 -0.01016197 -0.18400768" mass="0.76510830" fullinertia="0.00433034 0.00438029 0.00042299 -0.00001722 -0.00011502 -0.00027115"/>
+            <joint name="RBL_KNEE_JOINT" class="knee"/>
+            <geom mesh="RL_KNEE_LINK" class="visual"/>
+            <geom name="RBL_knee_col" class="collision" type="box" size="0.01 0.01 0.055" pos="0.021 0 -0.06" euler="0 -0.18 0"/>
+            <body name="RL_FOOT_LINK" pos="0 0 -0.21366">
+              <inertial pos="0 0.04488028 0" mass="0.90130429" fullinertia="0.00142854 0.00247230 0.00142858 0 0 0"/>
+              <joint name="RBL_FOOT_JOINT" class="wheel"/>
+              <geom mesh="RL_FOOT_LINK" class="visual"/>
+              <geom name="RBL_FOOT" class="wheel_collision" type="cylinder" size="0.05 0.02" euler="1.5708 0 0"/>
+              <site name="RBL_FOOT" pos="0 0 0" size="0.02" group="5"/>
+            </body>
+          </body>
+        </body>
+      </body>
+      
+      <body name="arm_base_on_l1" pos="0 0 0.09">
+        <body name="arm_base" childclass="airbot_play">
+          <site name="armbasepoint" pos="0 0 0" euler="0 0 0" size="0.01" type="sphere" rgba="1 0 0 1"/>
+          <inertial pos="-0.0262913514073823 -0.0151414731978384 0.0260741549397302" mass="0.735520547128483" diaginertia="0.000798907222818606 0.000995609340418481 0.001483737681037"/>
+          <geom name="base_link_collision" type="box" pos="-0.015 0 0.045" size="0.07 0.05 0.04" rgba="1 0 0 0.5" class="obj_collision"/>
+          <geom name="arm_base_0_visual" type="mesh" mesh="arm_base_0" pos="0 0 -0.0015" material="Gree_Light_Base" class="obj_visual"/>
+          <geom name="arm_base_1_visual" type="mesh" mesh="arm_base_1" material="Paint_Matte_Black" class="obj_visual"/>
+          <site name="touch_site_base" pos="-0.015 0 0.045" size="0.001" type="sphere" group="3"/>
+          <body name="link1" pos="0 0 0.1172">
+            <inertial pos="7.9126e-05 -0.002527 -0.0041359" quat="0.696716 0.716558 0.0238919 -0.0236876" mass="0.54639" diaginertia="0.000346294 0.000325437 0.000286269"/>
+            <joint name="joint1" class="joint1"/>
+            <geom name="link1_visual" type="mesh" mesh="link1" material="Paint_Matte_Black" class="obj_visual"/>
+            <site name="touch_site_link1" pos="0 0 0" size="0.001" type="sphere" group="3"/>
+            <body name="link2" quat="0.135866 0.135867 -0.69393 0.693932">
+              <inertial pos="0.22493 0.0047721 0.008023" quat="-0.210875 0.632473 -0.273056 0.693506" mass="0.64621" diaginertia="0.00516535 0.00505042 0.000418626"/>
+              <joint name="joint2" class="joint2"/>
+              <geom name="link2_collision1" type="box" pos="0.08 0.015 0" euler="0 0 0.15" size="0.11 0.03 0.04" rgba="1 0 0 0.5" class="obj_collision"/>
+              <geom name="link2_collision2" type="box" pos="0.235 0.015 0" euler="0 0 -0.3" size="0.065 0.025 0.045" rgba="1 0 0 0.5" class="obj_collision"/>
+              <geom name="link2_0_visual" type="mesh" mesh="link2_0" material="Paint_Matte_Black" class="obj_visual"/>
+              <geom name="link2_1_visual" type="mesh" mesh="link2_1" material="Paint_Metallic_White" class="obj_visual"/>
+              <site name="touch_site_link2" pos="0.15 0 0" size="0.001" type="sphere" group="3"/>
+              <body name="link3" pos="0.27009 0 0" quat="0.192144 0 0 -0.981367">
+                <inertial pos="0.16813 -5.5576e-05 0.0031184" quat="0.511278 0.488423 0.489191 0.510617" mass="0.26829" diaginertia="0.0031527 0.0030951 0.000239403"/>
+                <joint name="joint3" class="joint3"/>
+                <geom name="link3_collision" type="box" pos="0.13 0 0" size="0.13 0.025 0.025" rgba="1 0 0 0.5" class="obj_collision"/>
+                <geom name="link3_0_visual" type="mesh" mesh="link3_0" material="Paint_Matte_Black" class="obj_visual"/>
+                <geom name="link3_1_visual" type="mesh" mesh="link3_1" material="Paint_Metallic_White" class="obj_visual"/>
+                <site name="touch_site_link3" pos="0.13 0 0" size="0.001" type="sphere" group="3"/>
+                <body name="link4" pos="0.29015 0 0" quat="-2.59734e-06 0.707105 2.59735e-06 0.707108">
+                  <inertial pos="5.2436e-06 0.00040412 -0.03228" quat="0.999969 -0.000174762 -0.00792041 -6.98144e-05" mass="0.34876" diaginertia="0.000423574 0.000412 0.000126826"/>
+                  <joint name="joint4" class="joint4"/>
+                  <geom name="link4_visual" type="mesh" mesh="link4" material="Paint_Matte_Black" class="obj_visual"/>
+                  <geom name="link4_collision" type="cylinder" pos="0 0 0" euler="1.5708 0 0" size="0.03 0.03" rgba="1 0 0 0.5" class="obj_collision"/>
+                  <site name="touch_site_link4" pos="0 0 0" size="0.001" type="sphere" group="3"/>
+                  <body name="link5" quat="0.707105 0.707108 0 0">
+                    <inertial pos="8.3328e-06 0.026148 0.002525" quat="0.531568 0.4663 0.4663 0.531568" mass="0.36132" diaginertia="0.0004677 0.000432922 0.000178178"/>
+                    <joint name="joint5" class="joint5"/>
+                    <geom name="link5_0_visual" type="mesh" mesh="link5_0" material="Paint_Matte_Black" class="obj_visual"/>
+                    <geom name="link5_1_visual" type="mesh" mesh="link5_1" material="Paint_Metallic_White" class="obj_visual"/>
+                    <geom name="link5_collision" type="cylinder" pos="0 0.06 0" euler="1.5708 0 0" size="0.03 0.03" rgba="1 0 0 0.5" class="obj_collision"/>
+                    <site name="touch_site_link5" pos="0 0.06 0" size="0.001" type="sphere" group="3"/>
+                    <body name="link6" pos="0 0.23645 0" quat="0.499998 -0.5 0.5 0.500002">
+                      <inertial pos="-0.0047053 7.3857e-05 -0.12293" mass="0.53855" diaginertia="5e-05 5e-05 3.85e-05"/>
+                      <joint name="joint6" class="joint6"/>
+                      <geom name="link6_collision" type="box" pos="0 0 -0.07" size="0.025 0.08 0.015" rgba="1 0 0 0.5" class="obj_collision"/>
+                      <geom name="link6_visual" type="mesh" mesh="link6" material="Paint_Matte_Black" class="obj_visual"/>
+                      <site name="endpoint" pos="0 0 0.015" euler="0 -1.5708 0" size="0.01" type="sphere" rgba="0 1 0 1"/>
+                      <site name="touch_site_link6" pos="0 0 -0.07" size="0.001" type="sphere" group="3"/>
+                      <body name="eef_connect_base_link">
+                        <geom name="eef_collision" type="sphere" size=".012" pos="0 0 0.015" rgba="1 0 0 0.5" class="obj_collision"/>
+                        <site name="touch_site_eef" pos="0 0 0.015" size="0.001" type="sphere" group="3"/>
+                        <body name="g2_base_link">
+                          <geom name="g2_base_link_collision" type="box" pos="0 0 -0.07" size="0.025 0.08 0.015" rgba="1 0 0 0.5" class="obj_collision"/>
+                          <site name="touch_site_g2base" pos="0 0 -0.07" size="0.001" type="sphere" group="3"/>
+                          <body name="g2_left_link">
+                            <inertial pos="-0.048742 0.0096369 0.00044322" quat="0.757393 0.0415116 0.0313705 0.650883" mass="0.0626" diaginertia="2.79281e-05 1.90181e-05 1.21737e-05"/>
+                            <geom name="g2_left_link_visual" type="mesh" mesh="right" material="Paint_Matte_Black" class="obj_visual"/>
+                            <geom name="g2_left_finger_pad" type="box" size=".00525 .002 .02" pos="0 0.002 0.005" rgba="1 0 0 0.5" class="obj_collision"/>
+                            <geom name="g2_left_finger_collision" type="box" size=".015 .002 .018" pos="0 0.002 -0.035" rgba="1 0 0 0.5" class="obj_collision"/>
+                          </body>
+                          <body name="g2_right_link">
+                            <inertial pos="-0.049039 -0.0096764 0.00038868" quat="0.650491 0.0296695 0.0398251 0.757889" mass="0.061803" diaginertia="2.74809e-05 1.88104e-05 1.19127e-05"/>
+                            <geom name="g2_right_link_visual" type="mesh" mesh="left" material="Paint_Matte_Black" class="obj_visual"/>
+                            <geom name="g2_right_finger_pad" type="box" size=".00525 .002 .02" pos="0 -0.002 0.005" rgba="1 0 0 0.5" class="obj_collision"/>
+                            <geom name="g2_right_finger_collision" type="box" size=".015 .002 .018" pos="0 -0.002 -0.035" rgba="1 0 0 0.5" class="obj_collision"/>
+                          </body>
+                        </body>
+                      </body>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <contact>
+    <exclude body1="arm_base" body2="link2"/>
+    <exclude body1="arm_base" body2="link1"/>
+    <exclude body1="link1" body2="link2"/>
+    <exclude body1="link2" body2="link3"/>
+    <exclude body1="link3" body2="link4"/>
+    <exclude body1="link4" body2="link5"/>
+    <exclude body1="link5" body2="link6"/>
+    <exclude body1="link6" body2="eef_connect_base_link"/>
+    <exclude body1="eef_connect_base_link" body2="g2_base_link"/>
+    <exclude body1="g2_base_link" body2="g2_left_link"/>
+    <exclude body1="g2_base_link" body2="g2_right_link"/>
+    <exclude body1="BASE_LINK" body2="FL_ABAD_LINK"/>
+    <exclude body1="BASE_LINK" body2="FR_ABAD_LINK"/>
+    <exclude body1="BASE_LINK" body2="RR_ABAD_LINK"/>
+    <exclude body1="BASE_LINK" body2="RL_ABAD_LINK"/>
+    <exclude body1="FL_ABAD_LINK" body2="FL_HIP_LINK"/>
+    <exclude body1="FR_ABAD_LINK" body2="FR_HIP_LINK"/>
+    <exclude body1="RR_ABAD_LINK" body2="RR_HIP_LINK"/>
+    <exclude body1="RL_ABAD_LINK" body2="RL_HIP_LINK"/>
+    <exclude body1="FL_HIP_LINK" body2="FL_KNEE_LINK"/>
+    <exclude body1="FR_HIP_LINK" body2="FR_KNEE_LINK"/>
+    <exclude body1="RR_HIP_LINK" body2="RR_KNEE_LINK"/>
+    <exclude body1="RL_HIP_LINK" body2="RL_KNEE_LINK"/>
+    <exclude body1="FL_KNEE_LINK" body2="FL_FOOT_LINK"/>
+    <exclude body1="FR_KNEE_LINK" body2="FR_FOOT_LINK"/>
+    <exclude body1="RR_KNEE_LINK" body2="RR_FOOT_LINK"/>
+    <exclude body1="RL_KNEE_LINK" body2="RL_FOOT_LINK"/>
+  </contact>
+
+  <actuator>
+    <general class="abad" name="FBL_ABAD" joint="FBL_ABAD_JOINT"/>
+    <general class="hip" name="FBL_HIP" joint="FBL_HIP_JOINT"/>
+    <general class="knee" name="FBL_KNEE" joint="FBL_KNEE_JOINT"/>
+    <general class="abad" name="FAR_ABAD" joint="FAR_ABAD_JOINT"/>
+    <general class="hip" name="FAR_HIP" joint="FAR_HIP_JOINT"/>
+    <general class="knee" name="FAR_KNEE" joint="FAR_KNEE_JOINT"/>
+    <general class="abad" name="RAR_ABAD" joint="RAR_ABAD_JOINT"/>
+    <general class="hip" name="RAR_HIP" joint="RAR_HIP_JOINT"/>
+    <general class="knee" name="RAR_KNEE" joint="RAR_KNEE_JOINT"/>
+    <general class="abad" name="RBL_ABAD" joint="RBL_ABAD_JOINT"/>
+    <general class="hip" name="RBL_HIP" joint="RBL_HIP_JOINT"/>
+    <general class="knee" name="RBL_KNEE" joint="RBL_KNEE_JOINT"/>
+    <velocity class="wheel_act" name="FBL_FOOT" joint="FBL_FOOT_JOINT"/>
+    <velocity class="wheel_act" name="FAR_FOOT" joint="FAR_FOOT_JOINT"/>
+    <velocity class="wheel_act" name="RAR_FOOT" joint="RAR_FOOT_JOINT"/>
+    <velocity class="wheel_act" name="RBL_FOOT" joint="RBL_FOOT_JOINT"/>
+    <position name="joint1" joint="joint1" class="joint1" forcerange="-24 24" forcelimited="true" ctrllimited="true"/>
+    <position name="joint2" joint="joint2" class="joint2" forcerange="-24 24" forcelimited="true" ctrllimited="true"/>
+    <position name="joint3" joint="joint3" class="joint3" forcerange="-24 24" forcelimited="true" ctrllimited="true"/>
+    <position name="joint4" joint="joint4" class="joint4" forcerange="-8 8" forcelimited="true" ctrllimited="true"/>
+    <position name="joint5" joint="joint5" class="joint5" forcerange="-8 8" forcelimited="true" ctrllimited="true"/>
+    <position name="joint6" joint="joint6" class="joint6" forcerange="-8 8" forcelimited="true" ctrllimited="true"/>
+  </actuator>
+
+  <sensor>
+    <gyro site="imu" name="gyro"/>
+    <accelerometer site="imu" name="accelerometer"/>
+    <velocimeter site="imu" name="local_linvel"/>
+    <framezaxis objtype="site" objname="imu" name="upvector"/>
+    <framequat objtype="site" objname="imu" name="orientation"/>
+    <framepos objtype="site" objname="imu" name="global_position"/>
+    <framelinvel objtype="site" objname="imu" name="global_linvel"/>
+    <frameangvel objtype="site" objname="imu" name="global_angvel"/>
+    <framepos objtype="site" objname="FBL_FOOT" name="FBL_pos"/>
+    <framepos objtype="site" objname="FAR_FOOT" name="FAR_pos"/>
+    <framepos objtype="site" objname="RAR_FOOT" name="RAR_pos"/>
+    <framepos objtype="site" objname="RBL_FOOT" name="RBL_pos"/>
+    <framepos name="endpoint_pos" objtype="site" objname="endpoint" reftype="site" refname="armbasepoint"/>
+    <framequat name="endpoint_quat" objtype="site" objname="endpoint" reftype="site" refname="armbasepoint"/>
+    <framelinvel name="endpoint_vel" objtype="site" objname="endpoint" reftype="site" refname="armbasepoint"/>
+    <framepos name="endpoint_relative_pos" objtype="site" objname="endpoint" reftype="body" refname="arm_base_on_l1"/>
+    <framequat name="endpoint_relative_quat" objtype="site" objname="endpoint" reftype="body" refname="arm_base_on_l1"/>
+    <framepos name="armbasepoint_world_pos" objtype="site" objname="armbasepoint"/>
+    <framequat name="armbasepoint_world_quat" objtype="site" objname="armbasepoint"/>
+    <touch name="arm_touch_base" site="touch_site_base"/>
+    <touch name="arm_touch_link1" site="touch_site_link1"/>
+    <touch name="arm_touch_link2" site="touch_site_link2"/>
+    <touch name="arm_touch_link3" site="touch_site_link3"/>
+    <touch name="arm_touch_link4" site="touch_site_link4"/>
+    <touch name="arm_touch_link5" site="touch_site_link5"/>
+    <touch name="arm_touch_link6" site="touch_site_link6"/>
+    <touch name="arm_touch_eef" site="touch_site_eef"/>
+    <touch name="arm_touch_g2base" site="touch_site_g2base"/>
+  </sensor>
+</mujoco>

@@ -1,0 +1,226 @@
+# @package _global_
+training:
+  task_name: L1WArmManipLoco
+  sim_backend: motrix
+  log_root: logs/ppo-motrix-l1w
+algo:
+  num_envs: 4096
+  max_iterations: 3000
+  empirical_normalization: true
+  obs_groups:
+    actor:
+    - actor
+    critic:
+    - critic
+  policy:
+    init_noise_std: 0.5
+  algorithm:
+    learning_rate: 0.0003
+    entropy_coef: 0.001
+    num_mini_batches: 4
+play_profile:
+  enabled: true
+  scene:
+    enabled: true
+    source_model_file: robots/l1_w_arm/scene_flat.xml
+    ground_texture_file: robots/g1/textures/floor.png
+    skybox_rgb1:
+    - 0.9
+    - 0.9
+    - 0.91
+    skybox_rgb2:
+    - 0.68
+    - 0.68
+    - 0.7
+    ground_texrepeat:
+    - 0.25
+    - 0.25
+reward:
+  tracking_lin_vel:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: 2.0
+    params:
+      name: tracking_lin_vel
+  tracking_ang_vel:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: 1.0
+    params:
+      name: tracking_ang_vel
+  lin_vel_z:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: -5.0
+    params:
+      name: lin_vel_z
+  ang_vel_xy:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: -0.1
+    params:
+      name: ang_vel_xy
+  roll:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: -5.0
+    params:
+      name: roll
+  base_height:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: -100.0
+    params:
+      name: base_height
+  leg_pose:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: -1.0
+    params:
+      name: leg_pose
+  action_rate:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: -0.02
+    params:
+      name: action_rate
+  stand_still:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: -0.5
+    params:
+      name: stand_still
+  contact:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: 0.24
+    params:
+      name: contact
+  swing_feet_z:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: 10.0
+    params:
+      name: swing_feet_z
+  foot_drag:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: -0.1
+    params:
+      name: foot_drag
+  object_distance:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: 2.0
+    params:
+      name: object_distance
+  object_distance_l2:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: -0.5
+    params:
+      name: object_distance_l2
+  arm_collision:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: -1.0
+    params:
+      name: arm_collision
+env:
+  goal_ee:
+    sphere_l_range:
+    - 0.3
+    - 0.6
+    sphere_phi_range:
+    - -1.2566
+    - 1.0472
+    sphere_theta_range:
+    - -2.3562
+    - 2.3562
+    traj_time_range:
+    - 1.0
+    - 3.0
+    hold_time_range:
+    - 0.5
+    - 2.0
+    collision_upper_limits:
+    - 0.3
+    - 0.15
+    - -0.115
+    collision_lower_limits:
+    - -0.2
+    - -0.15
+    - -0.515
+    underground_limit: -0.57
+    num_collision_check_samples: 10
+    num_resample_attempts: 10
+    default_orn_roll: 0.0
+    arm_induced_pitch: 0.78
+    delta_orn_r:
+    - -0.5
+    - 0.5
+    delta_orn_p:
+    - -0.5
+    - 0.5
+    delta_orn_y:
+    - -0.5
+    - 0.5
+    init_ee_cart:
+    - 0.25
+    - 0.0
+    - 0.25
+  control_config:
+    arm_action_scale: 0.0
+  ik:
+    damping: 0.05
+    gain: 1.0
+    dq_clip: 0.2
+    use_orientation: true
+    orientation_mode: target
+  command_config:
+    vel_limit:
+    - - -0.6
+      - -0.4
+      - -0.8
+    - - 1.0
+      - 0.4
+      - 0.8
+    zero_command_prob: 0.15
+    resample_time_s: 4.0
+    gait_frequency: 2.0
+  curriculum_config:
+    enable: false
+  domain_rand:
+    randomize_base_mass: false
+    added_mass_range:
+    - -1.0
+    - 1.0
+    randomize_body_mass: true
+    body_mass_multiplier_range:
+    - 0.9
+    - 1.1
+    random_com: true
+    com_offset_x:
+    - -0.03
+    - 0.03
+    randomize_gravity: false
+    randomize_ground_friction: true
+    ground_friction_multiplier_range:
+    - 0.8
+    - 1.2
+    randomize_dof_armature: false
+    dof_armature_multiplier_range:
+    - 0.8
+    - 1.2
+    push_robots: true
+    push_interval: 500
+    max_force:
+    - 1.2
+    - 1.2
+    - 0.6
+    push_body_name: BASE_LINK
+    randomize_kp: false
+    kp_multiplier_range:
+    - 0.9
+    - 1.1
+    randomize_kd: false
+    kd_multiplier_range:
+    - 0.9
+    - 1.1
+  arm_stage:
+    freeze_arm_joints: false
+    disable_ee_goal_trajectory: false
+    fixed_ee_goal_cart:
+    - 0.15
+    - 0.0
+    - 0.25
+  reward_parameters:
+    tracking_sigma: 0.25
+    target_foot_height: 0.05
+    base_height_target: 0.38
+    object_sigma: 0.1

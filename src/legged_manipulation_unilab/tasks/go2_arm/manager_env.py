@@ -22,6 +22,7 @@ from legged_manipulation_unilab.tasks.geometry import np_quat_orientation_error_
 from legged_manipulation_unilab.tasks.geometry import (
     np_spherical_to_cartesian as _sphere2cart,
 )
+from legged_manipulation_unilab.tasks.go2_arm.base import ActionLayout
 
 
 def _task_cfg(env: ManagerBasedRlEnv) -> Any:
@@ -69,9 +70,18 @@ _ARM_TOUCH_SENSORS = (
 )
 
 
+def _action_layout(cfg: Any) -> ActionLayout:
+    layout = getattr(cfg, "action_layout", None)
+    return layout if isinstance(layout, ActionLayout) else ActionLayout()
+
+
+def _as_slice(bounds: tuple[int, int]) -> slice:
+    return slice(bounds[0], bounds[1])
+
+
 @dataclass(kw_only=True)
 class Go2ArmIKActionCfg(ActionTermCfg):
-    """Flat 18-DOF action: leg position targets plus Jacobian-guided arm targets."""
+    """Leg position targets, optional wheel velocities, and Jacobian-guided arm targets."""
 
     def build(self, env: "ManagerBasedRlEnv") -> "Go2ArmIKAction":  # pyright: ignore[reportIncompatibleMethodOverride]
         return Go2ArmIKAction(self, env)
@@ -84,10 +94,18 @@ class Go2ArmIKAction(ActionTerm):
         super().__init__(cfg, env)
         cfg_task = _task_cfg(env)
         self._task_cfg = cfg_task
+        self._layout = _action_layout(cfg_task)
+        self._leg = _as_slice(self._layout.leg_slice)
+        self._arm = _as_slice(self._layout.arm_slice)
+        self._wheel = (
+            _as_slice(self._layout.wheel_slice) if self._layout.wheel_slice is not None else None
+        )
         entity: Entity = env.scene[cfg.entity_name]
         joint_ids, joint_names = entity.find_joints_by_actuator_names((".*",))
-        if len(joint_ids) != 18:
-            raise ValueError(f"Go2Arm manager action expects 18 actuators, got {len(joint_ids)}")
+        if len(joint_ids) != self._layout.dim:
+            raise ValueError(
+                f"Go2Arm manager action expects {self._layout.dim} actuators, got {len(joint_ids)}"
+            )
         self._entity = entity
         self._joint_ids = np.asarray(joint_ids, dtype=np.intp)
         self._joint_ids.setflags(write=False)
@@ -98,6 +116,13 @@ class Go2ArmIKAction(ActionTerm):
         )
         if self._arm_rows.size != 6:
             raise ValueError("Go2Arm manager action could not resolve all six arm actuators")
+        pos_rows = list(range(*self._layout.leg_slice)) + list(range(*self._layout.arm_slice))
+        self._pos_rows = np.asarray(pos_rows, dtype=np.intp)
+        self._wheel_rows = (
+            np.arange(*self._layout.wheel_slice, dtype=np.intp)
+            if self._layout.wheel_slice is not None
+            else np.asarray([], dtype=np.intp)
+        )
         self._site_id = int(env._backend.get_site_ids([cfg_task.asset.ee_site_name])[0])
         self._arm_dof_ids = np.asarray(
             env._backend.get_joint_dof_indices(cfg_task.asset.arm_joint_names), dtype=np.intp
@@ -106,12 +131,12 @@ class Go2ArmIKAction(ActionTerm):
         self._ee_quat_view = env.scene.bind_sensor_data((cfg_task.sensor.ee_local_quat,))
         self._arm_ref_quat_view = env.scene.bind_sensor_data((cfg_task.sensor.arm_ref_world_quat,))
         dtype = get_global_dtype()
-        self._raw_actions = np.zeros((env.num_envs, 18), dtype=dtype)
+        self._raw_actions = np.zeros((env.num_envs, self._layout.dim), dtype=dtype)
         self._target = np.zeros_like(self._raw_actions)
 
     @property
     def action_dim(self) -> int:
-        return 18
+        return self._layout.dim
 
     @property
     def raw_action(self) -> np.ndarray:
@@ -121,23 +146,24 @@ class Go2ArmIKAction(ActionTerm):
         self._raw_actions[env_ids if env_ids is not None else slice(None)] = 0.0
 
     def process_actions(self, actions: np.ndarray) -> None:
-        if actions.shape != (self.num_envs, 18):
-            raise ValueError(f"Go2Arm action shape must be {(self.num_envs, 18)}")
+        expected = (self.num_envs, self._layout.dim)
+        if actions.shape != expected:
+            raise ValueError(f"Go2Arm action shape must be {expected}")
         if not np.isfinite(actions).all():
             raise ValueError("Go2Arm action contains NaN or Inf")
         self._raw_actions[:] = actions
         if self._task_cfg.arm_stage.freeze_arm_joints:
-            self._raw_actions[:, 12:18] = 0.0
+            self._raw_actions[:, self._arm] = 0.0
         exec_actions = (
             self._env.action_manager.prev_action
             if self._task_cfg.control_config.simulate_action_latency
             else self._raw_actions
         )
         default = self._entity.data.default_joint_pos
-        leg_target = exec_actions[:, :12] * self._task_cfg.control_config.action_scale
-        leg_target += default[:, :12]
+        leg_target = exec_actions[:, self._leg] * self._task_cfg.control_config.action_scale
+        leg_target += default[:, self._leg]
         if self._task_cfg.arm_stage.freeze_arm_joints:
-            arm_target = np.broadcast_to(default[:, 12:18], (self.num_envs, 6)).copy()
+            arm_target = np.broadcast_to(default[:, self._arm], (self.num_envs, 6)).copy()
         else:
             command = _command(self._env)
             backend = getattr(self._env, "_backend")
@@ -152,16 +178,30 @@ class Go2ArmIKAction(ActionTerm):
             )
             arm_target = (
                 arm_pos
-                + exec_actions[:, 12:18] * self._task_cfg.control_config.arm_action_scale
+                + exec_actions[:, self._arm] * self._task_cfg.control_config.arm_action_scale
                 + self._task_cfg.ik.gain * dq
             )
-        self._target[:, :12] = leg_target
-        self._target[:, 12:] = arm_target
+        self._target[:, self._leg] = leg_target
+        if self._wheel is not None:
+            self._target[:, self._wheel] = (
+                exec_actions[:, self._wheel] * self._task_cfg.control_config.wheel_action_scale
+            )
+        self._target[:, self._arm] = arm_target
         ranges = self._entity.data.actuator_ctrl_range
         np.clip(self._target, ranges[:, 0], ranges[:, 1], out=self._target)
 
     def apply_actions(self) -> None:
-        self._entity.set_joint_position_target(self._target, joint_ids=self._joint_ids)
+        if self._wheel_rows.size:
+            self._entity.set_joint_position_target(
+                self._target[:, self._pos_rows],
+                joint_ids=self._joint_ids[self._pos_rows],
+            )
+            self._entity.set_joint_velocity_target(
+                self._target[:, self._wheel_rows],
+                joint_ids=self._joint_ids[self._wheel_rows],
+            )
+        else:
+            self._entity.set_joint_position_target(self._target, joint_ids=self._joint_ids)
 
     def _compute_arm_ik_delta(
         self,
@@ -177,9 +217,7 @@ class Go2ArmIKAction(ActionTerm):
             self._site_id,
             self._arm_dof_ids,
         )
-        ref_rot_w = np_matrix_from_quat(
-            _sensor_quat_wxyz(backend, self._arm_ref_quat_view.read())
-        )
+        ref_rot_w = np_matrix_from_quat(_sensor_quat_wxyz(backend, self._arm_ref_quat_view.read()))
         rot_w_to_b = np.swapaxes(ref_rot_w, 1, 2)
         jacp_b = np.matmul(rot_w_to_b, jacp_w)
         if cfg.use_orientation:
@@ -635,9 +673,7 @@ class Go2ArmReward(ManagerTermBase):
         feet_pos = np.stack(
             [sensors[:, self._slices[name]] for name in self._feet_pos_names], axis=1
         )
-        contacts = np.stack(
-            [sensors[:, self._slices[name]] for name in _ARM_TOUCH_SENSORS], axis=1
-        )
+        contacts = np.stack([sensors[:, self._slices[name]] for name in _ARM_TOUCH_SENSORS], axis=1)
         ee_pos = np.asarray(self._ee_view.read(), dtype=get_global_dtype())
         joint_pos = self._entity.data.joint_pos
         joint_vel = self._entity.data.joint_vel
@@ -662,7 +698,15 @@ class Go2ArmReward(ManagerTermBase):
         elif name == "similar_to_default":
             value = np.sum(np.abs(joint_pos - defaults), axis=1)
         elif name == "leg_pose":
-            weights = np.array([1.0, 1.0, 0.1] * 4 + [0.0] * 6, dtype=get_global_dtype())
+            n_joints = int(joint_pos.shape[1])
+            if n_joints == 18:
+                weights = np.array([1.0, 1.0, 0.1] * 4 + [0.0] * 6, dtype=get_global_dtype())
+            elif n_joints == 22:
+                weights = np.array(
+                    [1.0, 1.0, 0.1] * 4 + [0.0] * 4 + [0.0] * 6, dtype=get_global_dtype()
+                )
+            else:
+                raise ValueError(f"leg_pose expects 18 or 22 joints, got {n_joints}")
             value = np.sum(weights * np.square(joint_pos - defaults), axis=1)
         elif name == "dof_pos_limits":
             if not cfg.leg_dof_upper_limits or not cfg.leg_dof_lower_limits:

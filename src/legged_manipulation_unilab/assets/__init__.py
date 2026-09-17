@@ -51,11 +51,17 @@ def ensure_assets(*, include_floor: bool = False) -> Path:
 
 
 def resolve_scene(path: str | Path | None = None) -> str:
-    """Materialize the bundled scene; preserve explicitly supplied custom scenes."""
-    bundled = ASSETS_ROOT_PATH / "robots/go2_arm/scene_flat.xml"
-    if path is not None and Path(path).resolve() != bundled:
+    """Materialize a packaged robot scene; preserve explicitly supplied custom scenes."""
+    if path is None:
+        path = ASSETS_ROOT_PATH / "robots/go2_arm/scene_flat.xml"
+    resolved = Path(path).expanduser().resolve()
+    try:
+        relative = resolved.relative_to(ASSETS_ROOT_PATH.resolve())
+    except ValueError:
         return str(path)
-    return str(ensure_assets() / "robots/go2_arm/scene_flat.xml")
+    if relative.parts[:1] != ("robots",):
+        return str(path)
+    return str(ensure_assets() / relative)
 
 
 def main() -> None:

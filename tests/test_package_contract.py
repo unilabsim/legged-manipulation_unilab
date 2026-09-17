@@ -71,13 +71,19 @@ import multiprocessing
 def worker(queue):
     from unilab.base.registry import ensure_registries, list_registered_envs
     ensure_registries()
-    queue.put(list_registered_envs()["Go2ArmManipLoco"]["available_backends"])
+    envs = list_registered_envs()
+    queue.put({
+        "go2": envs["Go2ArmManipLoco"]["available_backends"],
+        "l1w": envs["L1WArmManipLoco"]["available_backends"],
+    })
 if __name__ == "__main__":
     context = multiprocessing.get_context("spawn")
     queue = context.Queue()
     process = context.Process(target=worker, args=(queue,))
     process.start()
-    assert {"mujoco", "motrix"} <= set(queue.get(timeout=30))
+    registered = queue.get(timeout=30)
+    assert {"mujoco", "motrix"} <= set(registered["go2"])
+    assert {"mujoco", "motrix"} <= set(registered["l1w"])
     process.join(timeout=30)
     assert process.exitcode == 0
 """)
@@ -93,6 +99,9 @@ def test_bundled_assets_work_offline_and_repair_cache(monkeypatch, tmp_path):
     root = assets.ensure_assets()
     model = mujoco.MjModel.from_xml_path(str(root / "robots/go2_arm/scene_flat.xml"))
     assert model.nu == 18
+    l1w = mujoco.MjModel.from_xml_path(str(root / "robots/l1_w_arm/scene_flat.xml"))
+    assert l1w.nu == 22
+    assert l1w.nq == 29
     mesh = next((root / "robots").rglob("*.obj"))
     original = mesh.read_bytes()
     mesh.write_bytes(b"x" * len(original))

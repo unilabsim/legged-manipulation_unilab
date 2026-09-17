@@ -11,6 +11,15 @@ from omegaconf import DictConfig, OmegaConf
 
 CONF_ROOT = Path(__file__).resolve().parent / "conf"
 
+_TASK_OWNERS = {
+    "go2_arm_manip_loco": "Go2ArmManipLoco",
+    "l1_w_arm_manip_loco": "L1WArmManipLoco",
+}
+_TASK_SCENE_RELATIVE = {
+    "go2_arm_manip_loco": "robots/go2_arm/scene_flat.xml",
+    "l1_w_arm_manip_loco": "robots/l1_w_arm/scene_flat.xml",
+}
+
 
 def _resolve_eval_run(value: str | Path) -> Path:
     """Resolve a checkpoint file, training run directory, or parent log group."""
@@ -28,27 +37,38 @@ def _resolve_eval_run(value: str | Path) -> Path:
     raise ValueError(f"No model_*.pt checkpoints found under {path}")
 
 
-def compose_config(algo: str, sim: str, overrides: list[str]) -> DictConfig:
+def compose_config(
+    algo: str,
+    sim: str,
+    overrides: list[str],
+    task: str = "go2_arm_manip_loco",
+) -> DictConfig:
+    if task not in _TASK_OWNERS:
+        raise ValueError(f"Unknown task {task!r}; expected one of {sorted(_TASK_OWNERS)}")
     group = "ppo_him" if algo == "him_ppo" else "ppo"
-    owner = f"go2_arm_manip_loco/{sim}"
+    owner = f"{task}/{sim}"
     if not (CONF_ROOT / group / "task" / f"{owner}.yaml").is_file():
-        raise ValueError(f"No owner for algo={algo}, sim={sim}")
+        raise ValueError(f"No owner for algo={algo}, sim={sim}, task={task}")
     reserved = {"task", "training.task_name", "training.sim_backend", "training.play_only"}
     for override in overrides:
         if override.lstrip("+~").split("=", 1)[0] in reserved:
             raise ValueError("Use CLI flags to select task, backend and train/eval mode")
     with initialize_config_dir(config_dir=str(CONF_ROOT / group), version_base="1.3"):
         cfg = compose(config_name="config", overrides=[f"task={owner}", *overrides])
-    if cfg.training.task_name != "Go2ArmManipLoco" or cfg.training.sim_backend != sim:
+    if cfg.training.task_name != _TASK_OWNERS[task] or cfg.training.sim_backend != sim:
         raise ValueError("Overrides must preserve the selected task owner identity")
     return cfg
 
 
 def _main(*, play: bool, argv: list[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description="Go2 arm locomotion and manipulation")
+    parser = argparse.ArgumentParser(description="Go2 / L1-W arm locomotion and manipulation")
     parser.add_argument("--algo", choices=["ppo", "him_ppo"], default="ppo")
     parser.add_argument("--sim", choices=["mujoco", "motrix"], default="mujoco")
-    parser.add_argument("--task", choices=["go2_arm_manip_loco"], default="go2_arm_manip_loco")
+    parser.add_argument(
+        "--task",
+        choices=sorted(_TASK_OWNERS),
+        default="go2_arm_manip_loco",
+    )
     parser.add_argument(
         "--cfg", action="store_true", help="Print composed config without loading assets"
     )
@@ -78,7 +98,7 @@ def _main(*, play: bool, argv: list[str] | None = None) -> None:
         overrides.append(f"algo.load_run={_resolve_eval_run(args.run)}")
     if args.checkpoint is not None:
         overrides.append(f"algo.checkpoint={args.checkpoint}")
-    cfg = compose_config(args.algo, args.sim, overrides)
+    cfg = compose_config(args.algo, args.sim, overrides, task=args.task)
     cfg.training.play_only = play
     if args.cfg:
         print(OmegaConf.to_yaml(cfg))
@@ -90,7 +110,7 @@ def _main(*, play: bool, argv: list[str] | None = None) -> None:
     asset_overrides: list[str] = []
     if OmegaConf.select(cfg, "play_profile.scene.source_model_file") is not None:
         for key, relative in [
-            ("source_model_file", "robots/go2_arm/scene_flat.xml"),
+            ("source_model_file", _TASK_SCENE_RELATIVE[args.task]),
             ("ground_texture_file", "robots/g1/textures/floor.png"),
         ]:
             path = str(root / relative)
@@ -113,7 +133,7 @@ def _main(*, play: bool, argv: list[str] | None = None) -> None:
             sys.argv = [
                 original_argv[0],
                 f"--config-path={CONF_ROOT / 'ppo'}",
-                f"task=go2_arm_manip_loco/{args.sim}",
+                f"task={args.task}/{args.sim}",
                 *overrides,
                 f"training.play_only={str(play).lower()}",
                 *asset_overrides,

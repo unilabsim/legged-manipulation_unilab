@@ -198,6 +198,15 @@ def test_ppo_go2_arm_manip_loco_mujoco_uses_full_training_recipe():
     assert cfg.algo.max_iterations == 3000
 
 
+def test_ppo_l1_w_arm_manip_loco_mujoco_owner_identity():
+    cfg = compose_config("ppo", "mujoco", [], task="l1_w_arm_manip_loco")
+
+    assert cfg.training.task_name == "L1WArmManipLoco"
+    assert cfg.training.sim_backend == "mujoco"
+    assert cfg.training.log_root == "logs/ppo-mujoco-l1w"
+    assert cfg.env.domain_rand.push_body_name == "BASE_LINK"
+
+
 def test_site_jacobian_benchmark_imports_with_mujoco_stub() -> None:
     code = textwrap.dedent(
         """

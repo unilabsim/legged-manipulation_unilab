@@ -38,6 +38,21 @@ class ControlConfig:
         default_factory=lambda: [3.5, 3.8, 2.5, 1.5, 1.5, 1.5]
     )
     arm_action_scale: float = 0.0
+    wheel_action_scale: float = 10.0
+
+
+@dataclass
+class ActionLayout:
+    """Policy action packing in entity/actuator order.
+
+    Go2Arm is 12 leg positions + 6 arm positions. L1-W+Airbot inserts 4 wheel
+    velocity commands between the legs and the arm.
+    """
+
+    dim: int = 18
+    leg_slice: tuple[int, int] = (0, 12)
+    arm_slice: tuple[int, int] = (12, 18)
+    wheel_slice: tuple[int, int] | None = None
 
 
 @dataclass
@@ -98,6 +113,7 @@ class Go2ArmBaseCfg(ManagerBasedRlEnvCfg):
     ik: IKConfig = field(default_factory=IKConfig)
     asset: Asset = field(default_factory=Asset)
     sensor: Go2ArmSensor = field(default_factory=Go2ArmSensor)
+    action_layout: ActionLayout = field(default_factory=ActionLayout)
     iterations: int | None = None
     post_step_forward_sensor: bool = False
     adaptive_chunk_size: bool = True
@@ -127,6 +143,18 @@ def build_go2_arm_position_gains(cfg: ControlConfig) -> dict[str, np.ndarray]:
         "kp": np.concatenate([leg_kp, arm_kp]),
         "kd": np.concatenate([leg_kd, arm_kd]),
     }
+
+
+# L1-W actuator order: 12 leg positions, 4 wheel velocities, 6 arm positions.
+# UniSim may only apply kp/kd to affine position actuators.
+L1W_POSITION_ACTUATOR_IDS = np.concatenate(
+    [np.arange(12, dtype=np.int32), np.arange(16, 22, dtype=np.int32)]
+)
+
+
+def build_l1w_arm_position_gains(cfg: ControlConfig) -> dict[str, np.ndarray]:
+    gains = build_go2_arm_position_gains(cfg)
+    return {**gains, "actuator_ids": L1W_POSITION_ACTUATOR_IDS.copy()}
 
 
 def compute_arm_ik_delta(
@@ -173,12 +201,15 @@ def compute_arm_ik_delta(
 
 
 __all__ = [
+    "ActionLayout",
     "Asset",
     "ControlConfig",
     "Go2ArmBaseCfg",
     "Go2ArmSensor",
     "IKConfig",
+    "L1W_POSITION_ACTUATOR_IDS",
     "NoiseConfig",
     "build_go2_arm_position_gains",
+    "build_l1w_arm_position_gains",
     "compute_arm_ik_delta",
 ]

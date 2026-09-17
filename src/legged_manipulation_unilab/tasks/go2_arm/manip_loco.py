@@ -88,14 +88,6 @@ _ROBOT_BODY_NAMES = (
     "link6",
 )
 
-# ``arm_base_on_go2`` is a zero-mass, zero-inertia adapter body. MotrixSim
-# requires a positive-definite mass matrix when a mass override is present, so
-# assigning the event's positive minimum mass to that body makes the first step
-# produce NaNs. Keep it in scene bindings but exclude it from mass scaling.
-_MASS_RANDOMIZATION_BODY_NAMES = tuple(
-    name for name in _ROBOT_BODY_NAMES if name != "arm_base_on_go2"
-)
-
 
 @dataclass
 class InitState:
@@ -186,6 +178,9 @@ class Go2ArmManipLocoCfg(Go2ArmBaseCfg):  # pyright: ignore[reportIncompatibleVa
     history: HistoryConfig = field(default_factory=HistoryConfig)
     arm_stage: ArmStageConfig = field(default_factory=ArmStageConfig)
     curriculum_config: CurriculumConfig = field(default_factory=CurriculumConfig)
+    robot_body_names: tuple[str, ...] = _ROBOT_BODY_NAMES
+    # ``arm_base_on_go2`` is a zero-mass adapter; MotrixSim NaNs if mass-scaled.
+    mass_randomization_exclude: tuple[str, ...] = ("arm_base_on_go2",)
 
     def __post_init__(self) -> None:
         # Keep the old model_file owner override working while SceneCfg is the
@@ -281,11 +276,16 @@ class Go2ArmManipLocoCfg(Go2ArmBaseCfg):  # pyright: ignore[reportIncompatibleVa
             ),
         }
         if dr.get("randomize_body_mass", False):
+            mass_bodies = tuple(
+                name
+                for name in self.robot_body_names
+                if name not in set(self.mass_randomization_exclude)
+            )
             events["body_mass"] = EventTermCfg(
                 func=randomize_rigid_body_mass,
                 mode="reset",
                 params={
-                    "asset_cfg": SceneEntityCfg("robot", body_names=_MASS_RANDOMIZATION_BODY_NAMES),
+                    "asset_cfg": SceneEntityCfg("robot", body_names=mass_bodies),
                     "mass_distribution_params": tuple(dr["body_mass_multiplier_range"]),
                     "operation": "scale",
                     "recompute_inertia": False,
