@@ -28,8 +28,10 @@ robot data does not need to be downloaded from Hugging Face before training.
 
 ### Showcase
 
-<!-- TODO: replace this with a 10–20 second training/playback overview GIF. -->
-<!-- `docs/assets/showcase.gif` -->
+HIM-PPO playback on MuJoCo: velocity-command tracking (blue arrow), IK-driven arm
+following the sampled EE goal (red sphere).
+
+![showcase](docs/assets/showcase.gif)
 
 ## Reproduction
 
@@ -47,6 +49,20 @@ cache with:
 ```bash
 uv run legged-assets
 ```
+
+### Demo
+
+Play a bundled checkpoint before training anything yourself:
+
+```bash
+uv run legged-demo maniploco-ppo   # PPO on MuJoCo
+uv run legged-demo maniploco-him   # HIM-PPO on MuJoCo
+```
+
+Checkpoints ship inside the repository (`assets/checkpoints/`) together with
+their training `run_config.json`, so playback restores the trained task stage.
+Extra `legged-eval` overrides can be appended, for example
+`uv run legged-demo maniploco-ppo training.play_steps=400`.
 
 ### Train
 

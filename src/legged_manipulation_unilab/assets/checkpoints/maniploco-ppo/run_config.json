@@ -1,0 +1,478 @@
+{
+  "run": {
+    "algo": "ppo",
+    "task": "Go2ArmManipLoco",
+    "sim_backend": "mujoco",
+    "device": "cuda",
+    "collector_device": null,
+    "log_dir": "/home/user/ws/lemon/go_arm/legged-manipulation_unilab/logs/ppo-mujoco/Go2ArmManipLoco/2026-09-16_21-16-33_mujoco",
+    "start_time_utc": "2026-09-16T13:16:33.303403+00:00",
+    "hostname": "user-System-Product-Name",
+    "user": "user",
+    "git": {
+      "commit": "85ea2520541ad88cdf4172f6314dd249390064f4",
+      "branch": "fix/him-training-pipeline-and-freeze",
+      "dirty": true
+    },
+    "hardware": {
+      "platform": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+      "chip": "AMD Ryzen 9 9950X3D2 16-Core Processor",
+      "cpu_total_cores": "16",
+      "cpu_performance_cores": "unknown",
+      "cpu_efficiency_cores": "unknown",
+      "gpu_name": "NVIDIA GeForce RTX 4090",
+      "memory": "60.5 GB",
+      "gpu_memory": "49140 MiB"
+    },
+    "wandb": {
+      "project": "unilab",
+      "entity": null,
+      "name": "ppo__Go2ArmManipLoco__2026-09-16_21-16-33_mujoco",
+      "group": "Go2ArmManipLoco",
+      "job_type": "ppo",
+      "tags": [
+        "ppo",
+        "Go2ArmManipLoco",
+        "mujoco",
+        "user-user"
+      ],
+      "notes": null,
+      "mode": null
+    },
+    "configured_seed": 1,
+    "configured_seed_source": "algo.seed",
+    "effective_seed": 1
+  },
+  "config": {
+    "reward": {
+      "tracking_lin_vel": {
+        "func": "legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward",
+        "weight": 2.0,
+        "params": {
+          "name": "tracking_lin_vel"
+        }
+      },
+      "tracking_ang_vel": {
+        "func": "legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward",
+        "weight": 1.0,
+        "params": {
+          "name": "tracking_ang_vel"
+        }
+      },
+      "lin_vel_z": {
+        "func": "legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward",
+        "weight": -5.0,
+        "params": {
+          "name": "lin_vel_z"
+        }
+      },
+      "ang_vel_xy": {
+        "func": "legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward",
+        "weight": -0.1,
+        "params": {
+          "name": "ang_vel_xy"
+        }
+      },
+      "roll": {
+        "func": "legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward",
+        "weight": -5.0,
+        "params": {
+          "name": "roll"
+        }
+      },
+      "base_height": {
+        "func": "legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward",
+        "weight": -100.0,
+        "params": {
+          "name": "base_height"
+        }
+      },
+      "leg_pose": {
+        "func": "legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward",
+        "weight": -1.0,
+        "params": {
+          "name": "leg_pose"
+        }
+      },
+      "action_rate": {
+        "func": "legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward",
+        "weight": -0.02,
+        "params": {
+          "name": "action_rate"
+        }
+      },
+      "stand_still": {
+        "func": "legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward",
+        "weight": -0.8,
+        "params": {
+          "name": "stand_still"
+        }
+      },
+      "contact": {
+        "func": "legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward",
+        "weight": 0.24,
+        "params": {
+          "name": "contact"
+        }
+      },
+      "swing_feet_z": {
+        "func": "legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward",
+        "weight": 10.0,
+        "params": {
+          "name": "swing_feet_z"
+        }
+      },
+      "foot_drag": {
+        "func": "legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward",
+        "weight": -0.5,
+        "params": {
+          "name": "foot_drag"
+        }
+      },
+      "object_distance": {
+        "func": "legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward",
+        "weight": 2.0,
+        "params": {
+          "name": "object_distance"
+        }
+      },
+      "object_distance_l2": {
+        "func": "legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward",
+        "weight": -0.5,
+        "params": {
+          "name": "object_distance_l2"
+        }
+      },
+      "arm_collision": {
+        "func": "legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward",
+        "weight": -1.0,
+        "params": {
+          "name": "arm_collision"
+        }
+      }
+    },
+    "algo": {
+      "algo": "ppo",
+      "algo_log_name": "rsl_rl_ppo",
+      "seed": 1,
+      "num_envs": 4096,
+      "num_steps_per_env": 24,
+      "max_iterations": 3000,
+      "save_interval": 100,
+      "empirical_normalization": true,
+      "runner_class_name": "OnPolicyRunner",
+      "obs_groups": {
+        "default": [
+          "policy"
+        ],
+        "actor": [
+          "actor"
+        ],
+        "critic": [
+          "critic"
+        ]
+      },
+      "experiment_name": "test",
+      "run_name": "",
+      "resume": false,
+      "load_run": "-1",
+      "checkpoint": -1,
+      "resume_path": null,
+      "policy": {
+        "init_noise_std": 0.5,
+        "actor_hidden_dims": [
+          512,
+          256,
+          128
+        ],
+        "critic_hidden_dims": [
+          512,
+          256,
+          128
+        ],
+        "activation": "elu",
+        "class_name": "ActorCritic"
+      },
+      "algorithm": {
+        "class_name": "uni_rl.algos.rsl_rl_ppo:FinalObservationAwarePPO",
+        "value_loss_coef": 1.0,
+        "use_clipped_value_loss": true,
+        "clip_param": 0.2,
+        "entropy_coef": 0.001,
+        "num_learning_epochs": 5,
+        "num_mini_batches": 4,
+        "learning_rate": 0.0003,
+        "schedule": "adaptive",
+        "gamma": 0.99,
+        "lam": 0.95,
+        "desired_kl": 0.01,
+        "target_kl_stop": null,
+        "max_grad_norm": 1.0,
+        "adaptive_kl_beta": 0.9,
+        "adaptive_lr_growth": 1.1,
+        "adaptive_lr_decay": 1.2,
+        "adaptive_lr_update_interval": 5,
+        "metrics_interval": 8,
+        "finite_check_interval": 8,
+        "enable_compile": false,
+        "warmup_strict_iters": 10,
+        "warmup_metrics_interval": 2,
+        "warmup_finite_check_interval": 2,
+        "disable_finite_checks": true
+      }
+    },
+    "training": {
+      "task_name": "Go2ArmManipLoco",
+      "devices": null,
+      "device": null,
+      "logger": "tensorboard",
+      "wandb_project": "unilab",
+      "wandb_entity": null,
+      "wandb_group": null,
+      "wandb_job_type": null,
+      "wandb_name": null,
+      "wandb_tags": [],
+      "wandb_notes": null,
+      "wandb_mode": null,
+      "sim_backend": "mujoco",
+      "nan_guard": {
+        "enabled": true,
+        "buffer_size": 100,
+        "max_envs_to_dump": 5,
+        "output_dir": null
+      },
+      "play_only": false,
+      "no_play": false,
+      "sim2sim_strict": true,
+      "play_render_mode": "auto",
+      "play_env_num": 16,
+      "render_spacing": 1.0,
+      "play_steps": 200,
+      "cam_distance": 6.0,
+      "cam_elevation": -20.0,
+      "cam_azimuth": 90.0,
+      "cam_lookat": null,
+      "cam_tracking": false,
+      "cam_tracking_env_idx": 0,
+      "cam_tracking_extra_envs": 2,
+      "log_root": "logs/ppo-mujoco",
+      "num_timesteps": null,
+      "log_dir": null
+    },
+    "interactive": {
+      "action_mode": "zero",
+      "policy_obs_mode": "auto",
+      "show_target_bodies": false,
+      "show_reward_debug": false,
+      "target_show_axes": false,
+      "target_body_names": "",
+      "target_max_bodies": 0,
+      "target_marker_radius": 0.02,
+      "target_axis_length": 0.08,
+      "target_marker_alpha": 0.75,
+      "reward_debug_show_velocity": false,
+      "reward_debug_lin_vel_scale": 0.08,
+      "reward_debug_ang_vel_scale": 0.05,
+      "reward_debug_show_connectors": false,
+      "reward_debug_show_global_anchor": false,
+      "camera_follow_body": true,
+      "camera_focus_body_name": "",
+      "camera_height_offset": 0.15,
+      "camera_distance": null,
+      "camera_elevation": null,
+      "camera_azimuth": null,
+      "use_env_visual_model": true,
+      "speed": 1.0,
+      "start_paused": false,
+      "keyboard": false,
+      "keyboard_step_lin": 0.1,
+      "keyboard_step_ang": 0.2
+    },
+    "viser": {
+      "port": 8080,
+      "env_idx": 0,
+      "display_mode": "all",
+      "max_envs": 16
+    },
+    "env": {
+      "reward_parameters": {
+        "tracking_sigma": 0.25,
+        "base_height_target": 0.3,
+        "object_sigma": 0.1,
+        "target_foot_height": 0.1
+      },
+      "post_step_forward_sensor": false,
+      "adaptive_chunk_size": true,
+      "chunk_size": null,
+      "goal_ee": {
+        "sphere_l_range": [
+          0.3,
+          0.6
+        ],
+        "sphere_phi_range": [
+          -1.2566,
+          1.0472
+        ],
+        "sphere_theta_range": [
+          -2.3562,
+          2.3562
+        ],
+        "traj_time_range": [
+          1.0,
+          3.0
+        ],
+        "hold_time_range": [
+          0.5,
+          2.0
+        ],
+        "collision_upper_limits": [
+          0.3,
+          0.15,
+          -0.115
+        ],
+        "collision_lower_limits": [
+          -0.2,
+          -0.15,
+          -0.515
+        ],
+        "underground_limit": -0.57,
+        "num_collision_check_samples": 10,
+        "num_resample_attempts": 10,
+        "default_orn_roll": 0.0,
+        "arm_induced_pitch": 0.78,
+        "delta_orn_r": [
+          -0.5,
+          0.5
+        ],
+        "delta_orn_p": [
+          -0.5,
+          0.5
+        ],
+        "delta_orn_y": [
+          -0.5,
+          0.5
+        ],
+        "init_ee_cart": [
+          0.25,
+          0.0,
+          0.25
+        ]
+      },
+      "control_config": {
+        "arm_action_scale": 0.0
+      },
+      "ik": {
+        "damping": 0.05,
+        "gain": 1.0,
+        "dq_clip": 0.2,
+        "use_orientation": true,
+        "orientation_mode": "target"
+      },
+      "command_config": {
+        "vel_limit": [
+          [
+            -0.6,
+            -0.4,
+            -0.8
+          ],
+          [
+            1.0,
+            0.4,
+            0.8
+          ]
+        ],
+        "zero_command_prob": 0.15,
+        "resample_time_s": 4.0,
+        "gait_frequency": 2.0
+      },
+      "curriculum_config": {
+        "enable": false
+      },
+      "domain_rand": {
+        "randomize_base_mass": false,
+        "added_mass_range": [
+          -1.0,
+          1.0
+        ],
+        "randomize_body_mass": true,
+        "body_mass_multiplier_range": [
+          0.9,
+          1.1
+        ],
+        "random_com": true,
+        "com_offset_x": [
+          -0.03,
+          0.03
+        ],
+        "randomize_gravity": false,
+        "randomize_ground_friction": true,
+        "ground_friction_multiplier_range": [
+          0.8,
+          1.2
+        ],
+        "randomize_dof_armature": true,
+        "dof_armature_multiplier_range": [
+          0.8,
+          1.2
+        ],
+        "push_robots": true,
+        "push_interval": 500,
+        "max_force": [
+          1.2,
+          1.2,
+          0.6
+        ],
+        "push_body_name": "base",
+        "randomize_kp": true,
+        "kp_multiplier_range": [
+          0.9,
+          1.1
+        ],
+        "randomize_kd": true,
+        "kd_multiplier_range": [
+          0.9,
+          1.1
+        ]
+      },
+      "arm_stage": {
+        "freeze_arm_joints": false,
+        "disable_ee_goal_trajectory": false,
+        "fixed_ee_goal_cart": [
+          0.15,
+          0.0,
+          0.25
+        ]
+      }
+    },
+    "play_profile": {
+      "enabled": true,
+      "env": {
+        "render_spacing": 2.0
+      }
+    }
+  },
+  "contract_snapshot": {
+    "algo.obs_groups": {
+      "default": [
+        "policy"
+      ],
+      "actor": [
+        "actor"
+      ],
+      "critic": [
+        "critic"
+      ]
+    },
+    "algo.policy.actor_hidden_dims": [
+      512,
+      256,
+      128
+    ],
+    "algo.policy.critic_hidden_dims": [
+      512,
+      256,
+      128
+    ],
+    "algo.empirical_normalization": true
+  }
+}

@@ -30,6 +30,7 @@ export = ["onnx", "onnxscript", "onnxruntime"]
 [project.scripts]
 legged-train = "legged_manipulation_unilab.cli:train_main"
 legged-eval = "legged_manipulation_unilab.cli:eval_main"
+legged-demo = "legged_manipulation_unilab.demo:main"
 legged-assets = "legged_manipulation_unilab.assets:main"
 legged-ik = "legged_manipulation_unilab.tools.play_go2_arm_ik_only:main"
 legged-diagnose-ik = "legged_manipulation_unilab.tools.diagnose_go2_arm_ik:main"

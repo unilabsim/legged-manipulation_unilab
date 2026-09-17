@@ -9,3 +9,6 @@ logs/
 *.log
 MUJOCO_LOG.TXT
 .coverage
+
+# demo playback artifacts
+src/legged_manipulation_unilab/assets/checkpoints/*/play_video.mp4

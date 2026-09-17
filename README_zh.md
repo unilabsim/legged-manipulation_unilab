@@ -27,8 +27,10 @@ HIM-PPO 两种训练方案。
 
 ### 展示
 
-<!-- TODO: 替换为 10–20 秒的训练/回放总览 GIF。 -->
-<!-- `docs/assets/showcase.gif` -->
+MuJoCo 上的 HIM-PPO 回放:速度指令跟踪(蓝色箭头),IK 驱动的机械臂跟踪采样的
+末端目标(红色球)。
+
+![showcase](docs/assets/showcase.gif)
 
 ## 复现流程
 
@@ -46,6 +48,20 @@ uv sync --extra mujoco --extra motrix
 ```bash
 uv run legged-assets
 ```
+
+### 演示
+
+无需自己训练,直接回放内置 checkpoint:
+
+```bash
+uv run legged-demo maniploco-ppo   # MuJoCo 上的 PPO
+uv run legged-demo maniploco-him   # MuJoCo 上的 HIM-PPO
+```
+
+checkpoint 随仓库一起发布(`assets/checkpoints/`),并附带训练时的
+`run_config.json`,回放会自动恢复训练时的任务阶段。可以继续追加
+`legged-eval` 的 override,例如
+`uv run legged-demo maniploco-ppo training.play_steps=400`。
 
 ### 训练
 
