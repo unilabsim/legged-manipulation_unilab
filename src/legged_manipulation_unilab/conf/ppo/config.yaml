@@ -121,8 +121,17 @@ interactive:
   speed: 1.0
   start_paused: false
   keyboard: false
-  keyboard_step_lin: 0.1
+  keyboard_step_lin: 0.2
   keyboard_step_ang: 0.2
+  keyboard_step_ee: 0.02
+  pico: false
+  pico_deadzone: 0.1
+  pico_motion_scale: 1.0
+  pico_grip_threshold: 0.5
+  pico_home_duration: 1.2
+  pico_home_lin_speed: 0.15
+  pico_home_ang_speed: 1.0
+  pico_service: /opt/apps/roboticsservice/runService.sh
 
 viser:
   port: 8080

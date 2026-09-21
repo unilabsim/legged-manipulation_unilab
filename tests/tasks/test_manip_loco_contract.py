@@ -479,3 +479,33 @@ def test_go2_arm_ee_goal_world_available_for_play_overlay():
         assert np.isfinite(state.obs["obs"]).all()
     finally:
         env.close()
+
+
+@pytest.mark.slow
+def test_go2_arm_velocity_hold_survives_resample_and_keeps_ee_trajectory():
+    pytest.importorskip("mujoco", reason="mujoco not installed")
+    from legged_manipulation_unilab.training.keyboard_play import bind_velocity_teleop
+
+    env = _make_env(
+        num_envs=2,
+        extra={
+            "command_config": {
+                "vel_limit": [[-1.0, -1.0, -1.0], [1.0, 1.0, 1.0]],
+                "resample_time_s": 0.04,
+                "zero_command_prob": 0.0,
+            }
+        },
+    )
+    try:
+        env.reset()
+        command = bind_velocity_teleop(env)
+        held = np.array([0.37, -0.23, 0.19], dtype=np.float64)
+        command.set_velocity_command(held)
+        start_timer = int(command._arm_goal_timer[0])
+        for _ in range(8):
+            env.step(np.zeros((2, 18), dtype=np.float32))
+        np.testing.assert_allclose(command.vel_command_b, np.broadcast_to(held, (2, 3)), atol=1e-6)
+        assert command.velocity_hold_enabled is True
+        assert int(command._arm_goal_timer[0]) > start_timer
+    finally:
+        env.close()

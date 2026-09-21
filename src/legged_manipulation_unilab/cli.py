@@ -116,6 +116,16 @@ def _main(*, play: bool, argv: list[str] | None = None) -> None:
             path = str(root / relative)
             cfg.play_profile.scene[key] = path
             asset_overrides.append(f"play_profile.scene.{key}={path}")
+    if play and bool(OmegaConf.select(cfg, "interactive.pico", default=False)):
+        from legged_manipulation_unilab.training.pico_play import play_with_pico
+
+        play_with_pico(cfg, algo=args.algo)
+        return
+    if play and bool(OmegaConf.select(cfg, "interactive.keyboard", default=False)):
+        from legged_manipulation_unilab.training.keyboard_play import play_with_keyboard
+
+        play_with_keyboard(cfg, algo=args.algo)
+        return
     if args.algo == "him_ppo":
         from legged_manipulation_unilab.training import him
 

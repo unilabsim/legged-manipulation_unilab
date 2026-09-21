@@ -128,7 +128,7 @@ def build_play_debug_overlays(
         ]
         planar = np.asarray(vel_commands[index][:2], dtype=np.float64)
         speed = float(np.linalg.norm(planar))
-        if speed > 0.1:
+        if speed > 1.0e-6:
             yaw = _yaw_from_quat_wxyz(np.asarray(base_quat_w[index], dtype=np.float64))
             cos, sin = np.cos(yaw), np.sin(yaw)
             direction = np.array(

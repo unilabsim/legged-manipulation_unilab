@@ -79,6 +79,17 @@ def _as_slice(bounds: tuple[int, int]) -> slice:
     return slice(bounds[0], bounds[1])
 
 
+def clip_ee_goal_cart(cart: np.ndarray, goal_ee: Any) -> np.ndarray:
+    """Clip an arm-base Cartesian EE goal into the spherical workspace."""
+    dtype = get_global_dtype()
+    value = np.asarray(cart, dtype=dtype).reshape(3)
+    sphere = _cart2sphere(value[None, :])[0]
+    sphere[0] = np.clip(sphere[0], *goal_ee.sphere_l_range)
+    sphere[1] = np.clip(sphere[1], *goal_ee.sphere_phi_range)
+    sphere[2] = np.clip(sphere[2], *goal_ee.sphere_theta_range)
+    return _sphere2cart(sphere[None, :])[0]
+
+
 @dataclass(kw_only=True)
 class Go2ArmIKActionCfg(ActionTermCfg):
     """Leg position targets, optional wheel velocities, and Jacobian-guided arm targets."""
@@ -281,12 +292,57 @@ class Go2ArmManipLocoCommand(CommandTerm):
             "episode_steps": np.zeros(n, dtype=np.float32),
         }
         self._resetting_ids: np.ndarray | None = None
+        self._hold_velocity_command = False
+        self._hold_ee_command = False
         self._goal_view = env.scene.bind_sensor_data(("armbasepoint_world_pos",))
         self._goal_quat_view = env.scene.bind_sensor_data(("armbasepoint_world_quat",))
 
     @property
     def command(self) -> np.ndarray:
         return self.vel_command_b
+
+    @property
+    def velocity_hold_enabled(self) -> bool:
+        return self._hold_velocity_command
+
+    def enable_velocity_hold(self) -> None:
+        """Stop resampling chassis velocity; EE trajectories keep running."""
+        self._hold_velocity_command = True
+
+    @property
+    def ee_hold_enabled(self) -> bool:
+        return self._hold_ee_command
+
+    def enable_ee_hold(self) -> None:
+        """Stop EE trajectory resampling so a keyboard/home pose can stick."""
+        self._hold_ee_command = True
+        self._write_default_orientation(np.arange(self.num_envs, dtype=np.int32))
+
+    def set_velocity_command(self, command: np.ndarray) -> None:
+        """Write a body-frame ``[vx, vy, vyaw]`` command into every env row."""
+        value = np.asarray(command, dtype=get_global_dtype()).reshape(3)
+        low = np.asarray(self._task_cfg.command_config.vel_limit[0], dtype=get_global_dtype())
+        high = np.asarray(self._task_cfg.command_config.vel_limit[1], dtype=get_global_dtype())
+        self.vel_command_b[:] = np.clip(value, low, high)
+
+    def set_ee_goal_cart(self, cart: np.ndarray) -> None:
+        """Write an arm-base-frame EE Cartesian goal into every env row."""
+        self._write_ee_goal_cart(cart)
+
+    def set_ee_goal_orn(self, quat: np.ndarray) -> None:
+        """Write an arm-base-frame EE orientation goal (wxyz) into every env row."""
+        self._write_ee_goal_orn(quat)
+
+    def set_ee_goal_pose(self, cart: np.ndarray, quat: np.ndarray) -> bool:
+        """Write arm-base EE position and orientation together.
+
+        Returns False when the Cartesian goal is rejected by the workspace
+        collision check; orientation is then left unchanged.
+        """
+        if not self._write_ee_goal_cart(cart):
+            return False
+        self._write_ee_goal_orn(quat)
+        return True
 
     def reset(self, env_ids: np.ndarray | slice | None) -> dict[str, float]:
         ids = env_ids if isinstance(env_ids, np.ndarray) else np.arange(self.num_envs)
@@ -356,11 +412,57 @@ class Go2ArmManipLocoCommand(CommandTerm):
         self.vel_command_b[env_ids] = commands
 
     def _resample_command(self, env_ids: np.ndarray) -> None:
-        self._sample_velocity(env_ids)
+        if not self._hold_velocity_command:
+            self._sample_velocity(env_ids)
         resetting = self._resetting_ids
         if resetting is not None and np.array_equal(env_ids, resetting):
             self._reset_ee_goals(env_ids)
         self._write_feet_phase(env_ids)
+
+    def _write_ee_goal_cart(self, cart: np.ndarray) -> bool:
+        clipped = clip_ee_goal_cart(cart, self._task_cfg.goal_ee)
+        if self._ee_cart_forbidden(clipped):
+            return False
+        dtype = get_global_dtype()
+        self.curr_ee_goal_cart[:] = np.asarray(clipped, dtype=dtype).reshape(3)
+        sphere = _cart2sphere(self.curr_ee_goal_cart)
+        self.curr_ee_goal_sphere[:] = sphere
+        self._ee_start_sphere[:] = sphere
+        self._ee_goal_sphere[:] = sphere
+        self._arm_goal_timer[:] = 0
+        self._traj_steps[:] = 1
+        self._traj_total_steps[:] = np.iinfo(np.int32).max // 4
+        return True
+
+    def _write_ee_goal_orn(self, quat: np.ndarray) -> None:
+        dtype = get_global_dtype()
+        value = np.asarray(quat, dtype=dtype).reshape(4)
+        norm = float(np.linalg.norm(value))
+        value = value / max(norm, 1.0e-8)
+        if value[0] < 0.0:
+            value = -value
+        self.ee_goal_orn_quat[:] = value
+
+    def _ee_cart_forbidden(self, cart: np.ndarray) -> bool:
+        cfg = self._task_cfg.goal_ee
+        point = np.asarray(cart, dtype=get_global_dtype()).reshape(3)
+        upper = np.asarray(cfg.collision_upper_limits, dtype=get_global_dtype())
+        lower = np.asarray(cfg.collision_lower_limits, dtype=get_global_dtype())
+        inside = bool(np.all(point < upper) and np.all(point > lower))
+        underground = bool(point[2] < cfg.underground_limit)
+        return inside or underground
+
+    def _write_default_orientation(self, env_ids: np.ndarray) -> None:
+        cfg = self._task_cfg.goal_ee
+        self.ee_goal_orn_euler[env_ids, 0] = cfg.default_orn_roll
+        self.ee_goal_orn_euler[env_ids, 1] = cfg.arm_induced_pitch
+        self.ee_goal_orn_euler[env_ids, 2] = 0.0
+        quat = np_quat_from_euler_xyz(
+            self.ee_goal_orn_euler[env_ids, 0],
+            self.ee_goal_orn_euler[env_ids, 1],
+            self.ee_goal_orn_euler[env_ids, 2],
+        )
+        self.ee_goal_orn_quat[env_ids] = np.asarray(quat, dtype=get_global_dtype())
 
     def _update_command(self, env_ids: np.ndarray | None) -> None:
         # Base calls this after both episode and mid-episode resampling.  Mid-episode
@@ -480,6 +582,19 @@ class Go2ArmManipLocoCommand(CommandTerm):
 
     def _reset_ee_goals(self, env_ids: np.ndarray) -> None:
         cfg = self._task_cfg
+        if self._hold_ee_command:
+            init_cart = np.asarray(cfg.goal_ee.init_ee_cart, dtype=get_global_dtype())
+            held = clip_ee_goal_cart(init_cart, cfg.goal_ee)
+            self.curr_ee_goal_cart[env_ids] = held
+            sphere = _cart2sphere(np.broadcast_to(held, (len(env_ids), 3)))
+            self.curr_ee_goal_sphere[env_ids] = sphere
+            self._ee_start_sphere[env_ids] = sphere
+            self._ee_goal_sphere[env_ids] = sphere
+            self._traj_steps[env_ids] = 1
+            self._traj_total_steps[env_ids] = np.iinfo(np.int32).max // 4
+            self._arm_goal_timer[env_ids] = 0
+            self._write_default_orientation(env_ids)
+            return
         stage = cfg.arm_stage
         if stage.disable_ee_goal_trajectory:
             fixed = np.asarray(stage.fixed_ee_goal_cart, dtype=get_global_dtype())[None, :]
@@ -506,6 +621,8 @@ class Go2ArmManipLocoCommand(CommandTerm):
         self._sample_goal_orientation(env_ids, is_init=True)
 
     def _update_ee_trajectory(self) -> None:
+        if self._hold_ee_command:
+            return
         cfg = self._task_cfg
         stage = cfg.arm_stage
         if stage.disable_ee_goal_trajectory:
