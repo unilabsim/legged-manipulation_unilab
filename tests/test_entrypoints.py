@@ -163,7 +163,7 @@ def test_train_him_ppo_play_uses_shared_playback_session_factory(
     assert playback_cfg.action_mode == "policy"
     assert playback_cfg.num_envs == cfg.training.play_env_num
     assert factory_kwargs["device"] == "cpu"
-    assert factory_kwargs["wrapper_cls"] is mod.RslRlVecEnvWrapper
+    assert factory_kwargs["wrapper_cls"] is mod.RslRlVecEnvAdapter
     assert factory_kwargs["runner_cls"] is mod.HIMOnPolicyRunner
     assert factory_kwargs["guard_algo_name"] == "him_ppo"
     assert callable(factory_kwargs["runner_loader"])

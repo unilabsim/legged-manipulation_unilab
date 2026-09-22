@@ -11,9 +11,10 @@ algo:
   num_steps_per_env: 24
   max_iterations: 101
   save_interval: 100
-  empirical_normalization: false
-  runner_class_name: OnPolicyRunner
   obs_groups:
+    # `default: [policy]` is inert for rsl-rl 5.x (it only consumes the actor
+    # and critic sets) but stays so play mode matches the contract snapshot
+    # recorded by checkpoints trained before the schema migration.
     default:
       - policy
   experiment_name: test
@@ -22,14 +23,22 @@ algo:
   load_run: "-1"
   checkpoint: -1
   resume_path: null
-  policy:
-    init_noise_std: 1.0
-    actor_hidden_dims: [512, 256, 128]
-    critic_hidden_dims: [512, 256, 128]
+  actor:
+    class_name: rsl_rl.models.MLPModel
+    hidden_dims: [512, 256, 128]
     activation: elu
-    class_name: ActorCritic
+    obs_normalization: false
+    distribution_cfg:
+      class_name: rsl_rl.modules.distribution.GaussianDistribution
+      init_std: 1.0
+      std_type: scalar
+  critic:
+    class_name: rsl_rl.models.MLPModel
+    hidden_dims: [512, 256, 128]
+    activation: elu
+    obs_normalization: false
   algorithm:
-    class_name: uni_rl.algos.rsl_rl_ppo:FinalObservationAwarePPO
+    class_name: rsl_rl.algorithms:PPO
     value_loss_coef: 1.0
     use_clipped_value_loss: true
     clip_param: 0.2
@@ -41,19 +50,7 @@ algo:
     gamma: 0.99
     lam: 0.95
     desired_kl: 0.01
-    target_kl_stop: null
     max_grad_norm: 1.0
-    adaptive_kl_beta: 0.9
-    adaptive_lr_growth: 1.1
-    adaptive_lr_decay: 1.2
-    adaptive_lr_update_interval: 5
-    metrics_interval: 8
-    finite_check_interval: 8
-    enable_compile: false
-    warmup_strict_iters: 10
-    warmup_metrics_interval: 2
-    warmup_finite_check_interval: 2
-    disable_finite_checks: true
 
 training:
   task_name: Go2ArmManipLoco

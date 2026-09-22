@@ -230,7 +230,9 @@ def _home_keyframe_qpos() -> np.ndarray:
     root = ET.parse(ASSETS_ROOT_PATH / "robots/go2_arm/scene_flat.xml").getroot()
     for key in root.findall("./keyframe/key"):
         if key.attrib.get("name") == "home":
-            return np.asarray([float(item) for item in key.attrib["qpos"].split()], dtype=np.float64)
+            return np.asarray(
+                [float(item) for item in key.attrib["qpos"].split()], dtype=np.float64
+            )
     raise AssertionError("scene_flat.xml does not declare a 'home' keyframe")
 
 
@@ -367,9 +369,7 @@ def test_go2_arm_command_state_logged_each_step():
         assert log["command/vel_low_z"] == pytest.approx(-0.8)
         assert log["command/curriculum_expansions"] == 0
         command = env.command_manager.get_term("task")
-        assert command.gait_frequency == pytest.approx(
-            env._cfg.command_config.gait_frequency
-        )
+        assert command.gait_frequency == pytest.approx(env._cfg.command_config.gait_frequency)
     finally:
         env.close()
 
@@ -445,9 +445,10 @@ def test_go2_arm_motrix_framequat_reads_wxyz():
     thrashing) while every other channel stays healthy.
     """
     pytest.importorskip("motrixsim", reason="Motrix backend not installed")
-    from legged_manipulation_unilab.tasks.go2_arm.manager_env import _sensor_quat_wxyz
     from unilab.base.config_adapter import create_env
     from unilab.scripts.train_rsl_rl import build_ppo_env_cfg_override
+
+    from legged_manipulation_unilab.tasks.go2_arm.manager_env import _sensor_quat_wxyz
 
     cfg = compose_config("ppo", "motrix", [])
     cfg.algo.num_envs = 1

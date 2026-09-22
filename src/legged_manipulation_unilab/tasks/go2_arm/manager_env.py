@@ -177,9 +177,7 @@ class Go2ArmIKAction(ActionTerm):
             self._site_id,
             self._arm_dof_ids,
         )
-        ref_rot_w = np_matrix_from_quat(
-            _sensor_quat_wxyz(backend, self._arm_ref_quat_view.read())
-        )
+        ref_rot_w = np_matrix_from_quat(_sensor_quat_wxyz(backend, self._arm_ref_quat_view.read()))
         rot_w_to_b = np.swapaxes(ref_rot_w, 1, 2)
         jacp_b = np.matmul(rot_w_to_b, jacp_w)
         if cfg.use_orientation:
@@ -635,9 +633,7 @@ class Go2ArmReward(ManagerTermBase):
         feet_pos = np.stack(
             [sensors[:, self._slices[name]] for name in self._feet_pos_names], axis=1
         )
-        contacts = np.stack(
-            [sensors[:, self._slices[name]] for name in _ARM_TOUCH_SENSORS], axis=1
-        )
+        contacts = np.stack([sensors[:, self._slices[name]] for name in _ARM_TOUCH_SENSORS], axis=1)
         ee_pos = np.asarray(self._ee_view.read(), dtype=get_global_dtype())
         joint_pos = self._entity.data.joint_pos
         joint_vel = self._entity.data.joint_vel

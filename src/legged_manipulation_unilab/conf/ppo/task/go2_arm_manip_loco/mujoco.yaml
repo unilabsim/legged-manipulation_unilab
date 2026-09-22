@@ -6,14 +6,17 @@ training:
 algo:
   num_envs: 4096
   max_iterations: 3000
-  empirical_normalization: true
   obs_groups:
     actor:
     - actor
     critic:
     - critic
-  policy:
-    init_noise_std: 0.5
+  actor:
+    obs_normalization: true
+    distribution_cfg:
+      init_std: 0.5
+  critic:
+    obs_normalization: true
   algorithm:
     learning_rate: 0.0003
     entropy_coef: 0.001

@@ -11,19 +11,18 @@ requires-python = ">=3.10,<3.14"
 license = "Apache-2.0 AND BSD-3-Clause"
 license-files = ["LICENSE", "LICENSES/*"]
 dependencies = [
-    "unilab>=1.3.0,<1.4",
-    "unilab-rl>=1.2.0,<1.3",
-    "rsl-rl-lib @ git+https://github.com/leggedrobotics/rsl_rl.git@89869d8ccbc560d365026fb0cb127f93cbb3fb28",
+    "unilab>=1.3.2,<1.4",
+    "rsl-rl-lib>=5.5.0,<6",
     "numpy", "torch>=2.8", "tensordict", "hydra-core>=1.3",
     "filelock", "tensorboard",
 ]
 
 [project.optional-dependencies]
 mujoco = [
-    "unilab[mujoco]>=1.3.0,<1.4",
+    "unilab[mujoco]>=1.3.2,<1.4",
 ]
 motrix = [
-    "unilab[motrix]>=1.3.0,<1.4",
+    "unilab[motrix]>=1.3.2,<1.4",
 ]
 export = ["onnx", "onnxscript", "onnxruntime"]
 

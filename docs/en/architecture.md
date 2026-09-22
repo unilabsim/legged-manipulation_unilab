@@ -1,9 +1,9 @@
 # Architecture and repository boundaries
 
 This package owns one task: `go2_arm_manip_loco`. UniLab remains the general
-Manager-Based environment runtime and training adapter, unilab-rl provides
-shared PPO/runtime infrastructure, and unisim provides simulator interfaces and
-backend implementations.
+Manager-Based environment runtime and training adapter, rsl-rl provides the PPO
+training runtime directly (unilab-rl is no longer needed since unilab 1.3.2),
+and unisim provides simulator interfaces and backend implementations.
 
 ## Layout
 
@@ -30,7 +30,7 @@ and backend capabilities stay upstream.
 - The `unilab.tasks` entry point registers `Go2ArmManipLoco` without requiring a
   hard-coded task import inside UniLab.
 - The local CLI selects an algorithm and backend owner, then preserves task and
-  backend identity. PPO delegates to UniLab's launcher and unilab-rl's PPO;
+  backend identity. PPO delegates to UniLab's launcher and rsl-rl's PPO;
   HIM-PPO uses the runner in this package.
 - The Manager-Based action term maps the 18-dimensional policy action through
   task-owned leg targets and arm IK. Command, observation, reward, event, and

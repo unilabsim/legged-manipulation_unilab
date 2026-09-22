@@ -15,12 +15,11 @@ EXPORT_POLICY = False  # set to True in __main__ block
 
 ROOT_DIR = Path.cwd()
 
-from uni_rl.algos.rsl_rl import RslRlVecEnvWrapper, get_policy_obs_dims
-from uni_rl.utils.seed import apply_configured_training_seed
 from unilab.base.config_adapter import (
     BackendAdapter,
     create_env,
 )
+from unilab.rl import RslRlVecEnvAdapter, get_policy_obs_dims
 from unilab.training import (
     algo_config_dict,
     apply_env_nan_guard,
@@ -32,6 +31,7 @@ from unilab.training import (
 )
 from unilab.training.experiment import ExperimentTracker
 from unilab.utils.checkpoint import get_entrypoint_log_root
+from unilab.utils.seed import apply_configured_training_seed
 from unilab.visualization import render_play_mode
 from unilab.visualization.interactive_playback import (
     RslRlPlaybackConfig,
@@ -219,12 +219,11 @@ def play_him_ppo(cfg: DictConfig, device: str) -> str | None:
             checkpoint_resolver=lambda *_args: str(load_path),
             checkpoint_input_dim_reader=infer_checkpoint_actor_input_dim,
             entrypoint_log_root=get_entrypoint_log_root,
-            wrapper_cls=RslRlVecEnvWrapper,
+            wrapper_cls=RslRlVecEnvAdapter,
             runner_cls=HIMOnPolicyRunner,
             # HIMOnPolicyRunner.load does not accept a load_cfg argument.
             runner_loader=lambda runner, path: runner.load(path),
             policy_obs_dims_getter=get_policy_obs_dims,
-            train_cfg_normalizer=lambda train_cfg: train_cfg,
             sim2sim_preflight=lambda _path: None,  # Already checked before env construction.
             guard_algo_name="him_ppo",
         )
@@ -364,7 +363,7 @@ def main(cfg: DictConfig) -> None:
 
             apply_env_nan_guard(env, cfg.training)
 
-            wrapped_env = RslRlVecEnvWrapper(env, device=device)
+            wrapped_env = RslRlVecEnvAdapter(env, device=device)
             rl_cfg = algo_config_dict(cfg)
             runner = HIMOnPolicyRunner(wrapped_env, rl_cfg, log_dir=log_dir, device=device)
 

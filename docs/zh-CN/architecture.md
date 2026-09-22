@@ -1,8 +1,8 @@
 # 架构与仓库边界
 
 本包只维护一个任务：`go2_arm_manip_loco`。UniLab 继续提供通用
-Manager-Based 环境运行时和训练适配层；unilab-rl 提供共享 PPO/运行时基础
-设施；unisim 提供仿真接口和后端实现。
+Manager-Based 环境运行时和训练适配层；rsl-rl 直接提供 PPO 训练运行时
+（unilab 1.3.2 起不再需要 unilab-rl）；unisim 提供仿真接口和后端实现。
 
 ## 目录结构
 
@@ -28,7 +28,7 @@ manager 接口、通用几何和后端能力仍由上游维护。
 - `unilab.tasks` entry point 注册 `Go2ArmManipLoco`，UniLab 不需要硬编码导入
   该任务。
 - 本地 CLI 选择算法和后端配置，并保持任务与后端身份。PPO 委托给 UniLab
-  launcher 和 unilab-rl PPO；HIM-PPO 使用本包 runner。
+  launcher 和 rsl-rl PPO；HIM-PPO 使用本包 runner。
 - Manager-Based action term 将 18 维策略动作映射为腿部目标和机械臂 IK。
   command、observation、reward、event 与 termination terms 负责 Manip-Loco
   行为。
