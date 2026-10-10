@@ -64,6 +64,26 @@ reward:
     weight: -0.8
     params:
       name: stand_still
+  zero_lin_vel:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: -20.0
+    params:
+      name: zero_lin_vel
+  zero_ang_vel:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: 0.0
+    params:
+      name: zero_ang_vel
+  zero_wheel_vel:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: -0.5
+    params:
+      name: zero_wheel_vel
+  hip_soft:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: 0.0
+    params:
+      name: hip_soft
   contact:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
     weight: 0.24

@@ -127,6 +127,21 @@ def test_l1_w_arm_resolve_scene_materializes_packaged_xml(tmp_path, monkeypatch)
     assert Path(resolved).is_file()
 
 
+def test_l1_w_zero_lin_vel_is_stand_only():
+    cfg = compose_config("ppo", "mujoco", [], task="l1_w_arm_manip_loco")
+    assert cfg.reward.zero_lin_vel.weight == pytest.approx(-20.0)
+    assert cfg.reward.zero_lin_vel.params.name == "zero_lin_vel"
+    assert cfg.reward.zero_ang_vel.weight == pytest.approx(0.0)
+    assert cfg.reward.zero_ang_vel.params.name == "zero_ang_vel"
+    assert cfg.reward.zero_wheel_vel.weight == pytest.approx(-0.5)
+    assert cfg.reward.zero_wheel_vel.params.name == "zero_wheel_vel"
+    assert cfg.reward.hip_soft.weight == pytest.approx(0.0)
+    assert cfg.reward.hip_soft.params.name == "hip_soft"
+    assert cfg.reward.tracking_lin_vel.weight == pytest.approx(2.0)
+    assert cfg.reward.tracking_ang_vel.weight == pytest.approx(1.0)
+    assert cfg.env.reward_parameters.tracking_sigma == pytest.approx(0.25)
+
+
 def test_l1_w_arm_owner_composition_identity():
     cfg = compose_config("ppo", "mujoco", [], task="l1_w_arm_manip_loco")
     assert cfg.training.task_name == "L1WArmManipLoco"

@@ -750,6 +750,8 @@ class Go2ArmReward(ManagerTermBase):
                 )
         self._ee_view = env.scene.bind_sensor_data((self._task_cfg.sensor.ee_local_pos,))
         self._entity: Entity = env.scene["robot"]
+        layout = _action_layout(self._task_cfg)
+        self._wheel_slice = _as_slice(layout.wheel_slice) if layout.wheel_slice is not None else None
         self._torque_view = None
         # Bind actuator-force sensors only when the term actually contributes:
         # motrix does not implement jointactuatorfrc sensors at all, and
@@ -854,6 +856,21 @@ class Go2ArmReward(ManagerTermBase):
         elif name == "stand_still":
             still = (~command._command_is_moving(cmd)).astype(get_global_dtype())
             value = still * np.sum(np.abs(joint_pos[:, :12] - defaults[:, :12]), axis=1)
+        elif name == "zero_lin_vel":
+            still = (~command._command_is_moving(cmd)).astype(get_global_dtype())
+            value = still * np.sum(np.square(linvel[:, :2]), axis=1)
+        elif name == "zero_ang_vel":
+            still = (~command._command_is_moving(cmd)).astype(get_global_dtype())
+            value = still * np.square(gyro[:, 2])
+        elif name == "zero_wheel_vel":
+            if self._wheel_slice is None:
+                raise ValueError("zero_wheel_vel requires action_layout.wheel_slice")
+            still = (~command._command_is_moving(cmd)).astype(get_global_dtype())
+            value = still * np.sum(np.square(joint_vel[:, self._wheel_slice]), axis=1)
+        elif name == "hip_soft":
+            moving = command._command_is_moving(cmd).astype(get_global_dtype())
+            hips = joint_pos[:, 1:12:3] - defaults[:, 1:12:3]
+            value = moving * np.sum(np.square(hips), axis=1)
         elif name == "swing_feet_z":
             swing = command.feet_phase >= 0.6
             error = np.square(feet_pos[:, :, 2] - cfg.target_foot_height)
