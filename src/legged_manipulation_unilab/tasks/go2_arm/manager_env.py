@@ -694,6 +694,10 @@ class Go2ArmObservation(ManagerTermBase):
                 joint_pos = add(joint_pos, noise.scale_joint_angle)
                 joint_vel = add(joint_vel, noise.scale_joint_vel)
                 ee_pos = add(ee_pos, noise.scale_ee_pos)
+        wheel_slice = _action_layout(cfg).wheel_slice
+        if wheel_slice is not None:
+            # Continuous wheel angles carry no pose information; mask after noise.
+            joint_pos[:, _as_slice(wheel_slice)] = 0.0
         goal = command.curr_ee_goal_cart
         return np.concatenate(
             [
@@ -814,6 +818,11 @@ class Go2ArmReward(ManagerTermBase):
             value = np.square(base_height - cfg.base_height_target)
         elif name == "similar_to_default":
             value = np.sum(np.abs(joint_pos - defaults), axis=1)
+        elif name == "hip_pos":
+            # The first 12 action rows are four ABAD/HIP/KNEE triplets.
+            # Go2W's hip deviation term constrains the lateral ABAD joints.
+            hip_error = (joint_pos[:, :12] - defaults[:, :12])[:, ::3]
+            value = np.sum(np.square(hip_error), axis=1)
         elif name == "leg_pose":
             n_joints = int(joint_pos.shape[1])
             if n_joints == 18:
@@ -854,10 +863,31 @@ class Go2ArmReward(ManagerTermBase):
         elif name == "stand_still":
             still = (~command._command_is_moving(cmd)).astype(get_global_dtype())
             value = still * np.sum(np.abs(joint_pos[:, :12] - defaults[:, :12]), axis=1)
+        elif name == "wheel_stand_still":
+            wheel_slice = _action_layout(self._task_cfg).wheel_slice
+            if wheel_slice is None:
+                value = np.zeros(env.num_envs, dtype=get_global_dtype())
+            else:
+                still = (~command._command_is_moving(cmd)).astype(get_global_dtype())
+                value = still * np.sum(np.square(joint_vel[:, _as_slice(wheel_slice)]), axis=1)
         elif name == "swing_feet_z":
             swing = command.feet_phase >= 0.6
             error = np.square(feet_pos[:, :, 2] - cfg.target_foot_height)
             value = np.sum(np.exp(-error / 0.01) * swing, axis=1) / len(self._feet_pos_names)
+        elif name == "mirrorup":
+            # N-P3O foot_mirror_up: raw ABAD/HIP/KNEE angle differences.
+            # L1W actuator order is FL, FR, RR, RL; Go2 is FL, FR, RL, RR.
+            rear_right, rear_left = (
+                (slice(6, 9), slice(9, 12))
+                if _action_layout(self._task_cfg).wheel_slice is not None
+                else (slice(9, 12), slice(6, 9))
+            )
+            error = 0.5 * (
+                np.sum(np.square(joint_pos[:, :3] - joint_pos[:, rear_right]), axis=1)
+                + np.sum(np.square(joint_pos[:, 3:6] - joint_pos[:, rear_left]), axis=1)
+            )
+            # World-frame body-up Z equals -projected_gravity_z in N-P3O.
+            value = error * np.clip(gravity[:, 2], 0.0, 1.0)
         elif name == "foot_drag":
             contact = feet_force[:, :, -1] < 0.5
             height_error = np.clip(cfg.target_foot_height / 2.0 - feet_pos[:, :, 2], 0.0, None)

@@ -142,6 +142,7 @@ class RewardParameters:
     tracking_sigma: float = 0.25
     base_height_target: float = 0.3
     target_foot_height: float = 0.08
+    mirrorup_sigma: float = 0.05  # Legacy height reward; retained for old run configs.
     object_sigma: float = 0.1
     leg_dof_upper_limits: list[float] | None = None
     leg_dof_lower_limits: list[float] | None = None

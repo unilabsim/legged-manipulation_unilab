@@ -46,24 +46,44 @@ reward:
       name: roll
   base_height:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -100.0
+    weight: -10.0
     params:
       name: base_height
   leg_pose:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -1.0
+    weight: -1.2
     params:
       name: leg_pose
+  hip_pos:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: -0.05
+    params:
+      name: hip_pos
+  mirrorup:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: -0.05
+    params:
+      name: mirrorup
   action_rate:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
     weight: -0.02
     params:
       name: action_rate
+  dof_acc:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: -2.5e-7
+    params:
+      name: dof_acc
   stand_still:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
     weight: -0.8
     params:
       name: stand_still
+  wheel_stand_still:
+    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    weight: -0.01
+    params:
+      name: wheel_stand_still
   contact:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
     weight: 0.24
@@ -74,11 +94,11 @@ reward:
     weight: 10.0
     params:
       name: swing_feet_z
-  foot_drag:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -0.5
-    params:
-      name: foot_drag
+  # foot_drag:
+  #   func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+  #   weight: -0.5
+  #   params:
+  #     name: foot_drag
   object_distance:
     func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
     weight: 2.0
@@ -204,9 +224,10 @@ env:
     - 0.25
   reward_parameters:
     tracking_sigma: 0.25
-    base_height_target: 0.38
+    base_height_target: 0.30
     object_sigma: 0.1
-    target_foot_height: 0.05
+    # Wheel axle world height: 0.071 m tire radius + 0.05 m clearance on flat ground.
+    target_foot_height: 0.10
 play_profile:
   enabled: true
   env:

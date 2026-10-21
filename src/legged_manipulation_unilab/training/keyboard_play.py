@@ -359,9 +359,9 @@ def _handle_command_key(commander: KeyboardCommander, keycode: int) -> bool:
         commander.nudge(commander.AXIS_VYAW, +1.0)
     elif keycode == _KEY_RIGHT:
         commander.nudge(commander.AXIS_VYAW, -1.0)
-    elif keycode in (ord("a"), ord("A")):
+    elif keycode == ord("7"):
         commander.nudge(commander.AXIS_VY, +1.0)
-    elif keycode in (ord("d"), ord("D")):
+    elif keycode == ord("8"):
         commander.nudge(commander.AXIS_VY, -1.0)
     elif keycode in (_KEY_ENTER, _KEY_KP_ENTER):
         commander.zero()
@@ -601,7 +601,7 @@ def run_keyboard_viewer(session: Any, cfg: DictConfig) -> None:
     print("[keyboard-play] Keyboard teleop ENABLED:")
     print("  Up / Down    : chassis forward / backward (vx)")
     print("  Left / Right : chassis turn left / right  (vyaw)")
-    print("  A / D        : chassis strafe left / right (vy)")
+    print("  7 / 8        : chassis strafe left / right (vy; main keyboard)")
     print("  Enter        : chassis full stop")
     print("  U / J        : EE +x / -x (arm-base frame)")
     print("  H / K        : EE +y / -y")

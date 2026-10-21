@@ -44,7 +44,7 @@ def _default_l1w_scene() -> SceneCfg:
 
 
 def _l1w_control() -> ControlConfig:
-    return ControlConfig(leg_kp=20.0, leg_kd=0.7)
+    return ControlConfig(leg_kp=40.0, leg_kd=1.0)
 
 
 def _l1w_layout() -> ActionLayout:

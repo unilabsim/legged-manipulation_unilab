@@ -89,8 +89,14 @@ def test_handle_command_key_drive_and_strafe():
     assert _handle_command_key(commander, mod._KEY_UP)
     assert _handle_command_key(commander, mod._KEY_LEFT)
     assert commander.command == pytest.approx([0.2, 0.0, 0.2])
-    assert _handle_command_key(commander, ord("a"))
+    assert _handle_command_key(commander, ord("7"))
     assert commander.command[1] == pytest.approx(0.2)
+    assert _handle_command_key(commander, ord("8"))
+    assert commander.command[1] == pytest.approx(0.0)
+    assert _handle_command_key(commander, ord("8"))
+    assert commander.command[1] == pytest.approx(-0.2)
+    for key in "aAdD12":
+        assert _handle_command_key(commander, ord(key)) is False
     assert _handle_command_key(commander, mod._KEY_ENTER)
     assert commander.command.tolist() == [0.0, 0.0, 0.0]
     assert _handle_command_key(commander, ord("q")) is False
