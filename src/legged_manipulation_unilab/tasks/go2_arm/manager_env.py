@@ -404,6 +404,12 @@ class Go2ArmManipLocoCommand(CommandTerm):
         low = np.asarray(cfg.vel_limit[0], dtype=get_global_dtype())
         high = np.asarray(cfg.vel_limit[1], dtype=get_global_dtype())
         commands = self._env.rng.uniform(low, high, size=(count, 3)).astype(get_global_dtype())
+        pure_x_prob = float(cfg.pure_x_command_prob)
+        if not 0.0 <= pure_x_prob <= 1.0:
+            raise ValueError("pure_x_command_prob must be between 0 and 1")
+        if pure_x_prob > 0.0:
+            pure_x = self._env.rng.random(count) < pure_x_prob
+            commands[pure_x, 1:3] = 0.0
         commands[np.all(np.abs(commands) <= 0.1, axis=1)] = 0.0
         prob = float(cfg.zero_command_prob)
         if prob > 0.0:
@@ -471,10 +477,10 @@ class Go2ArmManipLocoCommand(CommandTerm):
         if env_ids is not None:
             return
         cfg = self._task_cfg
-        moving = self._command_is_moving(self.vel_command_b)
+        gait_active = self._gait_is_active(self.vel_command_b)
         advanced = np.fmod(self.phase + cfg.ctrl_dt * self.gait_frequency, 1.0)
-        self.phase = np.where(moving, advanced, 0.0).astype(np.float32)
-        self._write_feet_phase(slice(None), moving)
+        self.phase = np.where(gait_active, advanced, 0.0).astype(np.float32)
+        self._write_feet_phase(slice(None), gait_active)
         self._update_ee_trajectory()
         self._episode_steps += 1
         self._log_command_state()
@@ -500,8 +506,14 @@ class Go2ArmManipLocoCommand(CommandTerm):
     def _command_is_moving(self, commands: np.ndarray) -> np.ndarray:
         return np.any(np.abs(np.asarray(commands)[:, :3]) > 0.1, axis=1)
 
+    def _gait_is_active(self, commands: np.ndarray) -> np.ndarray:
+        if _action_layout(self._task_cfg).wheel_slice is not None:
+            # Wheel travel handles vx; step only for lateral or yaw commands.
+            return np.any(np.abs(np.asarray(commands)[:, 1:3]) > 0.05, axis=1)
+        return self._command_is_moving(commands)
+
     def _write_feet_phase(
-        self, env_ids: np.ndarray | slice, moving: np.ndarray | None = None
+        self, env_ids: np.ndarray | slice, gait_active: np.ndarray | None = None
     ) -> None:
         phase = self.phase[env_ids]
         feet = self.feet_phase[env_ids].copy()
@@ -509,9 +521,9 @@ class Go2ArmManipLocoCommand(CommandTerm):
         feet[:, 3] = phase
         feet[:, 1] = (phase + 0.5) % 1.0
         feet[:, 2] = (phase + 0.5) % 1.0
-        if moving is None:
-            moving = self._command_is_moving(self.vel_command_b[env_ids])
-        feet[~moving] = 0.0
+        if gait_active is None:
+            gait_active = self._gait_is_active(self.vel_command_b[env_ids])
+        feet[~gait_active] = 0.0
         self.feet_phase[env_ids] = feet
 
     def _sample_timing(self, env_ids: np.ndarray) -> None:

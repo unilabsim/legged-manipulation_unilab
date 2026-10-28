@@ -11,6 +11,7 @@ from unilab.base.cpu_runtime import apply_env_cpu_runtime
 from unilab.base.entity import EntityCfg
 from unilab.base.scene import SceneCfg
 from unilab.envs.manager_based_rl_env import ManagerBasedRlEnv
+from unilab.managers.reward_manager import RewardTermCfg
 
 from legged_manipulation_unilab.assets import ASSETS_ROOT_PATH, resolve_scene
 from legged_manipulation_unilab.tasks.go2_arm.base import (
@@ -22,10 +23,12 @@ from legged_manipulation_unilab.tasks.go2_arm.base import (
 )
 from legged_manipulation_unilab.tasks.go2_arm.manager_env import Go2ArmManagerBasedRlEnv
 from legged_manipulation_unilab.tasks.go2_arm.manip_loco import (
+    CommandsConfig,
     Go2ArmManipLocoCfg,
     InitState,
     RewardParameters,
 )
+from legged_manipulation_unilab.tasks.l1_w_arm.manager_env import L1WArmReward
 
 _DEFAULT_KEYFRAME = "home"
 _L1W_ACTION_DIM = 22
@@ -44,7 +47,7 @@ def _default_l1w_scene() -> SceneCfg:
 
 
 def _l1w_control() -> ControlConfig:
-    return ControlConfig(leg_kp=40.0, leg_kd=1.0)
+    return ControlConfig(leg_kp=50.0, leg_kd=1.0)
 
 
 def _l1w_layout() -> ActionLayout:
@@ -102,6 +105,11 @@ class L1WArmSensor(Go2ArmSensor):
     )
 
 
+@dataclass
+class L1WArmCommandsConfig(CommandsConfig):
+    pure_x_command_prob: float = 0.35
+
+
 @registry.envcfg("L1WArmManipLoco")
 @dataclass
 class L1WArmManipLocoCfg(Go2ArmManipLocoCfg):  # pyright: ignore[reportIncompatibleVariableOverride]
@@ -113,6 +121,7 @@ class L1WArmManipLocoCfg(Go2ArmManipLocoCfg):  # pyright: ignore[reportIncompati
     reward_parameters: RewardParameters = field(
         default_factory=lambda: RewardParameters(base_height_target=0.38, target_foot_height=0.05)
     )
+    command_config: CommandsConfig = field(default_factory=L1WArmCommandsConfig)
     control_config: ControlConfig = field(default_factory=_l1w_control)
     asset: Asset = field(default_factory=L1WArmAsset)
     sensor: Go2ArmSensor = field(default_factory=L1WArmSensor)
@@ -127,6 +136,17 @@ class L1WArmManipLocoCfg(Go2ArmManipLocoCfg):  # pyright: ignore[reportIncompati
             scene = _l1w_scene(self.model_file)
         self.scene = scene  # pyright: ignore[reportIncompatibleVariableOverride]
         self._configure_managers()
+
+    def set_reward_terms(self, terms: dict[str, float]) -> None:
+        """Install the L1-W reward implementation for programmatic configs."""
+        self.rewards = {  # pyright: ignore[reportIncompatibleVariableOverride]
+            name: RewardTermCfg(
+                func=L1WArmReward,
+                weight=float(weight),
+                params={"name": name},
+            )
+            for name, weight in terms.items()
+        }
 
 
 def make_l1_w_arm_manip_loco_env(
