@@ -508,8 +508,18 @@ class Go2ArmManipLocoCommand(CommandTerm):
 
     def _gait_is_active(self, commands: np.ndarray) -> np.ndarray:
         if _action_layout(self._task_cfg).wheel_slice is not None:
-            # Wheel travel handles vx; step only for lateral or yaw commands.
-            return np.any(np.abs(np.asarray(commands)[:, 1:3]) > 0.05, axis=1)
+            cfg = self._task_cfg.command_config
+            thresholds = np.asarray(
+                [
+                    np.inf if cfg.gait_x_threshold is None else cfg.gait_x_threshold,
+                    cfg.gait_lateral_threshold,
+                    cfg.gait_yaw_threshold,
+                ],
+                dtype=np.float64,
+            )
+            if np.any(thresholds < 0.0) or np.any(np.isnan(thresholds)):
+                raise ValueError("Gait command thresholds must be non-negative")
+            return np.any(np.abs(np.asarray(commands, dtype=np.float64)[:, :3]) > thresholds, axis=1)
         return self._command_is_moving(commands)
 
     def _write_feet_phase(

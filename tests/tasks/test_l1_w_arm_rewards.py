@@ -124,23 +124,29 @@ def test_wheel_stand_still_gates_all_command_axes_and_only_penalizes_wheels(
     np.testing.assert_array_equal(data.joint_vel, original_vel)
 
 
-def test_l1w_gait_runs_only_for_lateral_or_yaw_commands(monkeypatch):
+def test_l1w_gait_uses_configured_per_axis_thresholds(monkeypatch):
     command = manager_env.Go2ArmManipLocoCommand.__new__(manager_env.Go2ArmManipLocoCommand)
     command._task_cfg = L1WArmManipLocoCfg()
     command.vel_command_b = np.array(
         [
             [0.5, 0.0, 0.0],
             [-0.5, 0.0, 0.0],
+            [0.51, 0.0, 0.0],
+            [-0.51, 0.0, 0.0],
             [0.5, 0.2, 0.0],
             [0.5, 0.0, -0.2],
             [0.0, 0.04, 0.0],
             [0.0, 0.08, 0.0],
+            [0.0, 0.081, 0.0],
+            [0.0, 0.0, 0.12],
+            [0.0, 0.0, -0.121],
+            [0.45, 0.04, 0.1],
         ]
     )
-    command.phase = np.full(6, 0.2, dtype=np.float32)
-    command.feet_phase = np.full((6, 4), 0.8, dtype=np.float32)
+    command.phase = np.full(len(command.vel_command_b), 0.2, dtype=np.float32)
+    command.feet_phase = np.full((len(command.vel_command_b), 4), 0.8, dtype=np.float32)
     command.gait_frequency = 2.0
-    command._episode_steps = np.zeros(6, dtype=np.int32)
+    command._episode_steps = np.zeros(len(command.vel_command_b), dtype=np.int32)
     monkeypatch.setattr(
         manager_env.Go2ArmManipLocoCommand, "_update_ee_trajectory", lambda self: None
     )
@@ -148,22 +154,50 @@ def test_l1w_gait_runs_only_for_lateral_or_yaw_commands(monkeypatch):
 
     command._update_command(None)
 
-    np.testing.assert_array_equal(command.phase[[0, 1, 4]], 0.0)
-    np.testing.assert_array_equal(command.feet_phase[[0, 1, 4]], 0.0)
-    np.testing.assert_allclose(command.phase[[2, 3, 5]], 0.24)
-    assert np.any(command.feet_phase[[2, 3, 5]] >= 0.6)
+    rolling = [0, 1, 6, 7, 9, 11]
+    stepping = [2, 3, 4, 5, 8, 10]
+    np.testing.assert_array_equal(command.phase[rolling], 0.0)
+    np.testing.assert_array_equal(command.feet_phase[rolling], 0.0)
+    np.testing.assert_allclose(command.phase[stepping], 0.24)
+    assert np.any(command.feet_phase[stepping] >= 0.6)
     assert command._command_is_moving(command.vel_command_b)[0]
+
+
+def test_l1w_gait_thresholds_can_be_changed_independently():
+    command = manager_env.Go2ArmManipLocoCommand.__new__(manager_env.Go2ArmManipLocoCommand)
+    command._task_cfg = L1WArmManipLocoCfg()
+    cfg = command._task_cfg.command_config
+    cfg.gait_x_threshold = 0.7
+    cfg.gait_lateral_threshold = 0.10
+    cfg.gait_yaw_threshold = 0.15
+    np.testing.assert_array_equal(
+        command._gait_is_active(
+            np.array(
+                [
+                    [0.7, 0.0, 0.0],
+                    [-0.71, 0.0, 0.0],
+                    [0.0, 0.10, 0.0],
+                    [0.0, 0.101, 0.0],
+                    [0.0, 0.0, 0.15],
+                    [0.0, 0.0, -0.151],
+                ]
+            )
+        ),
+        [False, True, False, True, False, True],
+    )
 
 
 @pytest.mark.parametrize(
     "velocity_command, expected_swing, expected_contact",
     [
         ([0.5, 0.0, 0.0], 0.0, 1.0),
-        ([0.0, 0.08, 0.0], 0.5, 0.5),
+        ([0.0, 0.08, 0.0], 0.0, 1.0),
+        ([0.0, 0.081, 0.0], 0.5, 0.5),
         ([0.0, 0.0, -0.2], 0.5, 0.5),
+        ([-0.6, 0.0, 0.0], 0.5, 0.5),
     ],
 )
-def test_gait_rewards_follow_lateral_or_yaw_gate(
+def test_gait_rewards_follow_configured_command_gate(
     monkeypatch, velocity_command, expected_swing, expected_contact
 ):
     reward, _, values, slices = _reward_inputs(monkeypatch, "swing_feet_z")

@@ -130,6 +130,11 @@ class CommandsConfig:
     pure_x_command_prob: float = 0.0
     # Gait clock cadence in Hz; drives feet_phase advancement while moving.
     gait_frequency: float = 2.0
+    # Wheel-legged gait gate: each absolute command must exceed its threshold.
+    # None disables x-axis triggering; Go2 still uses its original motion gate.
+    gait_x_threshold: float | None = None
+    gait_lateral_threshold: float = 0.05
+    gait_yaw_threshold: float = 0.05
 
 
 @dataclass

@@ -108,6 +108,9 @@ class L1WArmSensor(Go2ArmSensor):
 @dataclass
 class L1WArmCommandsConfig(CommandsConfig):
     pure_x_command_prob: float = 0.35
+    gait_x_threshold: float | None = 0.5
+    gait_lateral_threshold: float = 0.08
+    gait_yaw_threshold: float = 0.12
 
 
 @registry.envcfg("L1WArmManipLoco")

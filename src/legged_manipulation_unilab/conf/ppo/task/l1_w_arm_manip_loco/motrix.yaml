@@ -176,6 +176,9 @@ env:
     pure_x_command_prob: 0.35
     resample_time_s: 4.0
     gait_frequency: 2.0
+    gait_x_threshold: 0.5
+    gait_lateral_threshold: 0.08
+    gait_yaw_threshold: 0.12
   curriculum_config:
     enable: false
   domain_rand:

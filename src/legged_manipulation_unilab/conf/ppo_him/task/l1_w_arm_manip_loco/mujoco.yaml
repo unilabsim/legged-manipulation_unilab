@@ -31,7 +31,7 @@ reward:
       name: tracking_ang_vel
   lin_vel_z:
     func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
-    weight: -5.0
+    weight: -10.0
     params:
       name: lin_vel_z
   ang_vel_xy:
@@ -51,17 +51,17 @@ reward:
       name: base_height
   leg_pose:
     func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
-    weight: -1.5
+    weight: -2.0
     params:
       name: leg_pose
   hip_pos:
     func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
-    weight: -0.05
+    weight: -0.02
     params:
       name: hip_pos
   mirrorup:
     func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
-    weight: -0.05
+    weight: -0.1
     params:
       name: mirrorup
   action_rate:
@@ -165,7 +165,10 @@ env:
     zero_command_prob: 0.15
     pure_x_command_prob: 0.35
     resample_time_s: 4.0
-    gait_frequency: 2.5
+    gait_frequency: 1.8
+    gait_x_threshold: 0.5
+    gait_lateral_threshold: 0.08
+    gait_yaw_threshold: 0.12
   curriculum_config:
     enable: false
     threshold: 0.8
@@ -226,7 +229,7 @@ env:
     - 0.25
   reward_parameters:
     tracking_sigma: 0.25
-    base_height_target: 0.30
+    base_height_target: 0.35
     object_sigma: 0.1
     # Wheel-center swing target: 0.071 m tire radius + about 0.03 m clearance.
-    target_foot_height: 0.10
+    target_foot_height: 0.08

@@ -147,11 +147,9 @@ def test_l1_w_arm_owner_composition_identity():
     assert cfg.training.log_root == "logs/ppo-mujoco-l1w"
     cfg_him = compose_config("him_ppo", "mujoco", [], task="l1_w_arm_manip_loco")
     assert cfg_him.algo.num_one_step_obs == 88
-    assert cfg_him.reward == cfg.reward
+    assert set(cfg_him.reward) == set(cfg.reward)
     assert len(cfg.reward) == 18
-    assert cfg.reward.leg_pose.weight == pytest.approx(-1.5)
-    assert cfg.reward.wheel_stand_still.weight == pytest.approx(-0.02)
-    assert cfg_him.env.reward_parameters == cfg.env.reward_parameters
+    assert cfg_him.env.command_config.gait_frequency == pytest.approx(1.8)
     assert cfg_him.env.arm_stage.freeze_arm_joints is False
     assert cfg_him.env.arm_stage.disable_ee_goal_trajectory is False
     him_task_cfg = registry.materialize_env_config("L1WArmManipLoco")
@@ -176,6 +174,9 @@ def test_l1_w_arm_owner_composition_identity():
         assert owner.env.control_config.leg_kp == pytest.approx(50.0)
         assert owner.env.control_config.leg_kd == pytest.approx(1.0)
         assert owner.env.command_config.pure_x_command_prob == pytest.approx(0.35)
+        assert owner.env.command_config.gait_x_threshold == pytest.approx(0.5)
+        assert owner.env.command_config.gait_lateral_threshold == pytest.approx(0.08)
+        assert owner.env.command_config.gait_yaw_threshold == pytest.approx(0.12)
         assert owner.reward
         assert "rolling_leg_motion" not in owner.reward
         assert "rolling_foot_lift" not in owner.reward
