@@ -4,13 +4,21 @@
 
 ## Overview
 
-This is a reinforcement-learning task repository for a Unitree Go2 quadruped
-combined with a six-DoF Airbot arm. It provides the complete Manip-Loco
+This repository provides reinforcement-learning tasks for the Unitree Go2
+quadruped and the L1-W wheeled quadruped, each combined with a six-DoF Airbot arm. It provides the complete Manip-Loco
 training configuration, robot scene, IK diagnostics, and both PPO and HIM-PPO
 training recipes.
 
-The task is registered with UniLab as `Go2ArmManipLoco` and supports MuJoCo and
-Motrix. The robot XML, meshes, and textures are bundled with the repository, so
+The tasks are registered with UniLab under separate owners:
+
+| Robot | Task | CLI task selector | Training recipes |
+| --- | --- | --- | --- |
+| Go2 + Airbot | `Go2ArmManipLoco` | `go2_arm_manip_loco` (default) | PPO on MuJoCo / Motrix; HIM-PPO on MuJoCo |
+| L1-W + Airbot | `L1WArmManipLoco` | `l1_w_arm_manip_loco` | PPO and HIM-PPO on MuJoCo |
+
+L1-W combines 12 leg joints, four driven wheels, and six arm joints for a
+22-dimensional action space. The arm tracks end-effector targets through IK.
+Both robots use bundled assets. The robot XML, meshes, and textures are bundled with the repository, so
 robot data does not need to be downloaded from Hugging Face before training.
 
 ## Capabilities and showcase
@@ -19,19 +27,25 @@ robot data does not need to be downloaded from Hugging Face before training.
 
 | Capability | Description |
 | --- | --- |
-| Mobile manipulation | Adds Airbot end-effector goal tracking to Go2 locomotion. |
+| Mobile manipulation | Combines Go2 locomotion or L1-W wheeled-legged motion with Airbot end-effector goal tracking. |
 | PPO training | Provides MuJoCo and Motrix training recipes. |
 | HIM-PPO training | Uses actor observation history and a privileged critic input. |
 | IK diagnostics | Visualizes targets, checks Jacobians, calibrates orientation, and compares numerical methods. |
-| Local robot assets | Bundles the Go2 + Airbot scene, meshes, and textures for offline loading. |
+| Local robot assets | Bundles Go2 + Airbot and L1-W + Airbot scenes, meshes, and textures for offline loading. |
 | Playback and export | Selects checkpoints from training logs, renders playback, and exports HIM-PPO policies. |
 
 ### Showcase
 
-HIM-PPO playback on MuJoCo: velocity-command tracking (blue arrow), IK-driven arm
+**Go2 + Airbot.** HIM-PPO playback on MuJoCo: velocity-command tracking (blue arrow), IK-driven arm
 following the sampled EE goal (red sphere).
 
-![showcase](docs/assets/showcase.gif)
+![Go2 + Airbot playback](docs/assets/showcase.gif)
+
+**L1-W + Airbot.** PPO playback on MuJoCo: wheeled-legged locomotion with
+IK-driven arm motion. The demonstration uses a fixed camera and dynamic
+end-effector targets within a reduced forward workspace.
+
+![L1-W + Airbot playback](docs/assets/play_legged-manipulation_l1w-aribot.gif)
 
 ## Reproduction
 
@@ -52,7 +66,7 @@ uv run legged-assets
 
 ### Demo
 
-Play a bundled checkpoint before training anything yourself:
+Play a bundled Go2 + Airbot checkpoint before training anything yourself:
 
 ```bash
 uv run legged-demo maniploco-ppo   # PPO on MuJoCo
@@ -66,7 +80,7 @@ Extra `legged-eval` overrides can be appended, for example
 
 ### Train
 
-All built-in training recipes default to 3000 policy updates:
+All built-in training recipes default to 3000 policy updates. For Go2 + Airbot:
 
 ```bash
 uv run legged-train --algo ppo --sim mujoco training.no_play=true
@@ -77,6 +91,16 @@ uv run legged-train --algo him_ppo --sim mujoco training.no_play=true
 Run directories are created under `logs/ppo-mujoco`, `logs/ppo-motrix`, or
 `logs/him-mujoco`, respectively. Override `training.log_root` only when a
 different location is required.
+
+For L1-W + Airbot, select its task explicitly:
+
+```bash
+uv run legged-train --algo ppo --sim mujoco --task l1_w_arm_manip_loco training.no_play=true
+uv run legged-train --algo him_ppo --sim mujoco --task l1_w_arm_manip_loco training.no_play=true
+```
+
+L1-W runs are saved under `logs/ppo-mujoco-l1w/L1WArmManipLoco` and
+`logs/him-mujoco-l1w/L1WArmManipLoco`, respectively.
 
 Use `--cfg` to inspect the composed configuration. For a short smoke run,
 override the update count:
@@ -96,9 +120,41 @@ uv run legged-eval --algo ppo --sim motrix --run logs/ppo-motrix/Go2ArmManipLoco
 uv run legged-eval --algo him_ppo --sim mujoco --run logs/him-mujoco/Go2ArmManipLoco
 ```
 
+Evaluate an L1-W + Airbot checkpoint from your training logs:
+
+```bash
+uv run legged-eval --algo ppo --sim mujoco --task l1_w_arm_manip_loco --run logs/ppo-mujoco-l1w/L1WArmManipLoco
+uv run legged-eval --algo him_ppo --sim mujoco --task l1_w_arm_manip_loco --run logs/him-mujoco-l1w/L1WArmManipLoco
+```
+
 Select another checkpoint with `--checkpoint 100`. Set `MUJOCO_GL=egl` on a
 headless machine. With the export extra installed, add `--export` to HIM-PPO
 evaluation to export the policy.
+
+### Keyboard control
+
+Open the MuJoCo viewer with an L1-W policy and control the velocity and arm
+end-effector target interactively:
+
+```bash
+uv run legged-eval --algo ppo --sim mujoco --task l1_w_arm_manip_loco \
+  --run logs/ppo-mujoco-l1w/L1WArmManipLoco interactive.keyboard=true
+```
+
+| Key | Control |
+| --- | --- |
+| Up / Down | Increase forward / backward velocity |
+| Left / Right | Turn left / right |
+| 7 / 8 | Strafe left / right |
+| Enter | Stop the chassis |
+| U / J, H / K, Y / O | Move the arm target along ±x, ±y, ±z in the arm-base frame |
+| L | Return the arm target to its initial position |
+| Space | Pause / resume |
+| Backspace | Reset the robot |
+
+Velocity commands persist after releasing a key; press Enter to stop. The viewer
+requires a graphical display. The same controls are available for Go2 by using
+`--task go2_arm_manip_loco` and a Go2 checkpoint.
 
 ### IK checks
 
