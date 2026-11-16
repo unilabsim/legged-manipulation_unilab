@@ -20,97 +20,97 @@ algo:
     num_mini_batches: 4
 reward:
   tracking_lin_vel:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
     weight: 2.0
     params:
       name: tracking_lin_vel
   tracking_ang_vel:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
     weight: 1.0
     params:
       name: tracking_ang_vel
   lin_vel_z:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
     weight: -5.0
     params:
       name: lin_vel_z
   ang_vel_xy:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
     weight: -0.1
     params:
       name: ang_vel_xy
   roll:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
     weight: -5.0
     params:
       name: roll
   base_height:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -100.0
+    func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
+    weight: -10.0
     params:
       name: base_height
   leg_pose:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -1.0
+    func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
+    weight: -1.5
     params:
       name: leg_pose
+  hip_pos:
+    func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
+    weight: -0.05
+    params:
+      name: hip_pos
+  mirrorup:
+    func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
+    weight: -0.05
+    params:
+      name: mirrorup
   action_rate:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
     weight: -0.02
     params:
       name: action_rate
+  dof_acc:
+    func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
+    weight: -2.5e-7
+    params:
+      name: dof_acc
   stand_still:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
     weight: -0.8
     params:
       name: stand_still
-  zero_lin_vel:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -20.0
+  wheel_stand_still:
+    func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
+    weight: -0.02
     params:
-      name: zero_lin_vel
-  zero_ang_vel:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: 0.0
-    params:
-      name: zero_ang_vel
-  zero_wheel_vel:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -0.5
-    params:
-      name: zero_wheel_vel
-  hip_soft:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: 0.0
-    params:
-      name: hip_soft
+      name: wheel_stand_still
   contact:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
     weight: 0.24
     params:
       name: contact
   swing_feet_z:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
     weight: 10.0
     params:
       name: swing_feet_z
-  foot_drag:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
-    weight: -0.5
-    params:
-      name: foot_drag
+  # foot_drag:
+  #   func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
+  #   weight: -0.5
+  #   params:
+  #     name: foot_drag
   object_distance:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
     weight: 2.0
     params:
       name: object_distance
   object_distance_l2:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
     weight: -0.5
     params:
       name: object_distance_l2
   arm_collision:
-    func: legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward
+    func: legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward
     weight: -1.0
     params:
       name: arm_collision
@@ -158,6 +158,8 @@ env:
     - 0.0
     - 0.25
   control_config:
+    leg_kp: 50.0
+    leg_kd: 1.0
     arm_action_scale: 0.0
   ik:
     damping: 0.05
@@ -174,8 +176,12 @@ env:
       - 0.4
       - 0.8
     zero_command_prob: 0.15
+    pure_x_command_prob: 0.35
     resample_time_s: 4.0
     gait_frequency: 2.0
+    gait_x_threshold: 0.5
+    gait_lateral_threshold: 0.08
+    gait_yaw_threshold: 0.12
   curriculum_config:
     enable: false
   domain_rand:
@@ -224,9 +230,10 @@ env:
     - 0.25
   reward_parameters:
     tracking_sigma: 0.25
-    base_height_target: 0.38
+    base_height_target: 0.30
     object_sigma: 0.1
-    target_foot_height: 0.05
+    # Wheel-center swing target: 0.071 m tire radius + about 0.03 m clearance.
+    target_foot_height: 0.10
 play_profile:
   enabled: true
   env:

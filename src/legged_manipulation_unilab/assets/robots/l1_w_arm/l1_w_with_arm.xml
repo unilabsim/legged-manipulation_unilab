@@ -142,7 +142,9 @@
               <inertial pos="0 0.04488028 0" mass="0.90130429" fullinertia="0.00142854 0.00247230 0.00142858 0 0 0"/>
               <joint name="FBL_FOOT_JOINT" class="wheel"/>
               <geom mesh="FL_FOOT_LINK" class="visual"/>
-              <geom name="FBL_FOOT" class="wheel_collision" type="cylinder" size="0.05 0.02" euler="1.5708 0 0"/>
+              <!-- Retain the inner hub proxy; bind foot contact to the outer tire. -->
+              <geom name="FBL_hub_collision" class="wheel_collision" type="cylinder" size="0.05 0.02" euler="1.5708 0 0"/>
+              <geom name="FBL_FOOT" class="wheel_collision" type="cylinder" size="0.071 0.024" pos="0 0.0475 0" euler="1.5708 0 0"/>
               <site name="FBL_FOOT" pos="0 0 0" size="0.02" group="5"/>
             </body>
           </body>
@@ -167,7 +169,9 @@
               <inertial pos="0 -0.04488028 0" mass="0.90130429" fullinertia="0.00142854 0.00247230 0.00142858 0 0 0"/>
               <joint name="FAR_FOOT_JOINT" class="wheel"/>
               <geom mesh="FR_FOOT_LINK" class="visual"/>
-              <geom name="FAR_FOOT" class="wheel_collision" type="cylinder" size="0.05 0.02" euler="1.5708 0 0"/>
+              <!-- Retain the inner hub proxy; bind foot contact to the outer tire. -->
+              <geom name="FAR_hub_collision" class="wheel_collision" type="cylinder" size="0.05 0.02" euler="1.5708 0 0"/>
+              <geom name="FAR_FOOT" class="wheel_collision" type="cylinder" size="0.071 0.024" pos="0 -0.0475 0" euler="1.5708 0 0"/>
               <site name="FAR_FOOT" pos="0 0 0" size="0.02" group="5"/>
             </body>
           </body>
@@ -192,7 +196,9 @@
               <inertial pos="0 -0.04488028 0" mass="0.90130429" fullinertia="0.00142854 0.00247230 0.00142858 0 0 0"/>
               <joint name="RAR_FOOT_JOINT" class="wheel"/>
               <geom mesh="RR_FOOT_LINK" class="visual"/>
-              <geom name="RAR_FOOT" class="wheel_collision" type="cylinder" size="0.05 0.02" euler="1.5708 0 0"/>
+              <!-- Retain the inner hub proxy; bind foot contact to the outer tire. -->
+              <geom name="RAR_hub_collision" class="wheel_collision" type="cylinder" size="0.05 0.02" euler="1.5708 0 0"/>
+              <geom name="RAR_FOOT" class="wheel_collision" type="cylinder" size="0.071 0.024" pos="0 -0.0475 0" euler="1.5708 0 0"/>
               <site name="RAR_FOOT" pos="0 0 0" size="0.02" group="5"/>
             </body>
           </body>
@@ -217,7 +223,9 @@
               <inertial pos="0 0.04488028 0" mass="0.90130429" fullinertia="0.00142854 0.00247230 0.00142858 0 0 0"/>
               <joint name="RBL_FOOT_JOINT" class="wheel"/>
               <geom mesh="RL_FOOT_LINK" class="visual"/>
-              <geom name="RBL_FOOT" class="wheel_collision" type="cylinder" size="0.05 0.02" euler="1.5708 0 0"/>
+              <!-- Retain the inner hub proxy; bind foot contact to the outer tire. -->
+              <geom name="RBL_hub_collision" class="wheel_collision" type="cylinder" size="0.05 0.02" euler="1.5708 0 0"/>
+              <geom name="RBL_FOOT" class="wheel_collision" type="cylinder" size="0.071 0.024" pos="0 0.0475 0" euler="1.5708 0 0"/>
               <site name="RBL_FOOT" pos="0 0 0" size="0.02" group="5"/>
             </body>
           </body>

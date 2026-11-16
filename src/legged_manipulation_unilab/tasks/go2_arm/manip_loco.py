@@ -125,8 +125,16 @@ class CommandsConfig:
     )
     resample_time_s: float | None = None
     zero_command_prob: float = 0.2
+    # Fraction of non-idle commands with vy and yaw set to zero.  Go2 keeps the
+    # original mixed-axis distribution; L1-W enables this for wheel-only travel.
+    pure_x_command_prob: float = 0.0
     # Gait clock cadence in Hz; drives feet_phase advancement while moving.
     gait_frequency: float = 2.0
+    # Wheel-legged gait gate: each absolute command must exceed its threshold.
+    # None disables x-axis triggering; Go2 still uses its original motion gate.
+    gait_x_threshold: float | None = None
+    gait_lateral_threshold: float = 0.05
+    gait_yaw_threshold: float = 0.05
 
 
 @dataclass
@@ -142,6 +150,7 @@ class RewardParameters:
     tracking_sigma: float = 0.25
     base_height_target: float = 0.3
     target_foot_height: float = 0.08
+    mirrorup_sigma: float = 0.05  # Legacy height reward; retained for old run configs.
     object_sigma: float = 0.1
     leg_dof_upper_limits: list[float] | None = None
     leg_dof_lower_limits: list[float] | None = None
@@ -276,11 +285,19 @@ class Go2ArmManipLocoCfg(Go2ArmBaseCfg):  # pyright: ignore[reportIncompatibleVa
             ),
         }
         if dr.get("randomize_body_mass", False):
-            mass_bodies = tuple(
-                name
-                for name in self.robot_body_names
-                if name not in set(self.mass_randomization_exclude)
-            )
+            allowed_mass_bodies = set(self.robot_body_names) - set(self.mass_randomization_exclude)
+            selected_mass_bodies = dr.get("body_mass_body_names")
+            if selected_mass_bodies is None:
+                mass_bodies = tuple(
+                    name for name in self.robot_body_names if name in allowed_mass_bodies
+                )
+            else:
+                unknown_mass_bodies = set(selected_mass_bodies) - allowed_mass_bodies
+                if unknown_mass_bodies:
+                    raise ValueError(
+                        f"body_mass_body_names contains invalid bodies: {sorted(unknown_mass_bodies)}"
+                    )
+                mass_bodies = tuple(selected_mass_bodies)
             events["body_mass"] = EventTermCfg(
                 func=randomize_rigid_body_mass,
                 mode="reset",

@@ -4,13 +4,20 @@
 
 ## 任务概览
 
-这是一个面向 Go2 四足机器人和 Airbot 六轴机械臂组合的强化学习任务仓库。
+这是一个面向 Go2 四足机器人、L1-W 轮足机器人与 Airbot 六轴机械臂组合的强化学习任务仓库。
 它提供完整的 Manip-Loco 训练配置、机器人场景、IK 诊断工具，以及 PPO 和
 HIM-PPO 两种训练方案。
 
-任务在 UniLab 训练框架中注册为 `Go2ArmManipLoco`，支持 MuJoCo 与 Motrix
-后端；机器人 XML、网格和纹理随仓库提供，训练前不需要从 Hugging Face 下载
-机器人数据。
+两种机器人分别注册为独立的 UniLab 任务：
+
+| 机器人 | 任务名称 | CLI 任务选择 | 训练配置 |
+| --- | --- | --- | --- |
+| Go2 + Airbot | `Go2ArmManipLoco` | `go2_arm_manip_loco`（默认） | MuJoCo / Motrix PPO；MuJoCo HIM-PPO |
+| L1-W + Airbot | `L1WArmManipLoco` | `l1_w_arm_manip_loco` | MuJoCo PPO 与 HIM-PPO |
+
+L1-W 包含 12 个腿部关节、4 个驱动轮和 6 个机械臂关节，动作空间共 22 维；
+机械臂通过 IK 跟踪末端目标。两种机器人的 XML、网格和纹理均随仓库提供，
+训练前不需要从 Hugging Face 下载机器人数据。
 
 ## 能力与展示
 
@@ -18,19 +25,24 @@ HIM-PPO 两种训练方案。
 
 | 能力 | 说明 |
 | --- | --- |
-| 足式移动操作 | 在 Go2 行走控制中加入 Airbot 末端目标跟踪。 |
+| 足式移动操作 | 在 Go2 行走或 L1-W 轮足运动中加入 Airbot 末端目标跟踪。 |
 | PPO 训练 | 提供 MuJoCo 和 Motrix 训练配置。 |
 | HIM-PPO 训练 | 提供 actor 观测历史与 privileged critic 输入。 |
 | IK 诊断 | 查看末端目标、检查 Jacobian、标定姿态并对比数值方案。 |
-| 本地机器人资产 | 内置 Go2 + Airbot 场景、网格和纹理，可离线加载。 |
+| 本地机器人资产 | 内置 Go2 + Airbot、L1-W + Airbot 场景、网格和纹理，可离线加载。 |
 | 策略回放与导出 | 按训练日志选择 checkpoint，回放视频并导出 HIM-PPO 策略。 |
 
 ### 展示
 
-MuJoCo 上的 HIM-PPO 回放:速度指令跟踪(蓝色箭头),IK 驱动的机械臂跟踪采样的
+**Go2 + Airbot。** MuJoCo 上的 HIM-PPO 回放:速度指令跟踪(蓝色箭头),IK 驱动的机械臂跟踪采样的
 末端目标(红色球)。
 
-![showcase](docs/assets/showcase.gif)
+![Go2 + Airbot 回放](docs/assets/showcase.gif)
+
+**L1-W + Airbot。** MuJoCo 上的 PPO 回放：轮足移动与 IK 驱动的机械臂运动。
+演示采用固定相机，机械臂在缩小后的前方工作空间内跟踪动态末端目标。
+
+![L1-W + Airbot 回放](docs/assets/play_legged-manipulation_l1w-aribot.gif)
 
 ## 复现流程
 
@@ -51,7 +63,7 @@ uv run legged-assets
 
 ### 演示
 
-无需自己训练,直接回放内置 checkpoint:
+无需自己训练，直接回放内置 Go2 + Airbot checkpoint：
 
 ```bash
 uv run legged-demo maniploco-ppo   # MuJoCo 上的 PPO
@@ -65,7 +77,7 @@ checkpoint 随仓库一起发布(`assets/checkpoints/`),并附带训练时的
 
 ### 训练
 
-内置训练配置默认均为 3000 次策略更新。可按后端和算法选择：
+内置训练配置默认均为 3000 次策略更新。Go2 + Airbot 可按后端和算法选择：
 
 ```bash
 uv run legged-train --algo ppo --sim mujoco training.no_play=true
@@ -75,6 +87,16 @@ uv run legged-train --algo him_ppo --sim mujoco training.no_play=true
 
 训练 run 会分别写入 `logs/ppo-mujoco`、`logs/ppo-motrix` 或
 `logs/him-mujoco`。只有需要换位置时才覆盖 `training.log_root`。
+
+L1-W + Airbot 需显式选择任务：
+
+```bash
+uv run legged-train --algo ppo --sim mujoco --task l1_w_arm_manip_loco training.no_play=true
+uv run legged-train --algo him_ppo --sim mujoco --task l1_w_arm_manip_loco training.no_play=true
+```
+
+L1-W 的训练记录分别保存到 `logs/ppo-mujoco-l1w/L1WArmManipLoco` 和
+`logs/him-mujoco-l1w/L1WArmManipLoco`。
 
 使用 `--cfg` 查看组合后的完整配置。短训验证可覆盖更新次数，例如：
 
@@ -93,9 +115,39 @@ uv run legged-eval --algo ppo --sim motrix --run logs/ppo-motrix/Go2ArmManipLoco
 uv run legged-eval --algo him_ppo --sim mujoco --run logs/him-mujoco/Go2ArmManipLoco
 ```
 
+从训练日志中评估 L1-W + Airbot：
+
+```bash
+uv run legged-eval --algo ppo --sim mujoco --task l1_w_arm_manip_loco --run logs/ppo-mujoco-l1w/L1WArmManipLoco
+uv run legged-eval --algo him_ppo --sim mujoco --task l1_w_arm_manip_loco --run logs/him-mujoco-l1w/L1WArmManipLoco
+```
+
 用 `--checkpoint 100` 选择指定 checkpoint。无显示环境时添加
 `MUJOCO_GL=egl`。安装 export extra 后，HIM-PPO 评估可加 `--export` 导出
 策略。
+
+### 键盘操作
+
+加载 L1-W 策略并打开 MuJoCo 查看器，交互控制底盘速度和机械臂末端目标：
+
+```bash
+uv run legged-eval --algo ppo --sim mujoco --task l1_w_arm_manip_loco \
+  --run logs/ppo-mujoco-l1w/L1WArmManipLoco interactive.keyboard=true
+```
+
+| 按键 | 功能 |
+| --- | --- |
+| ↑ / ↓ | 增加前进 / 后退速度 |
+| ← / → | 左转 / 右转 |
+| 7 / 8 | 左移 / 右移 |
+| Enter | 底盘停止 |
+| U / J、H / K、Y / O | 在机械臂基座坐标系中沿 ±x、±y、±z 移动末端目标 |
+| L | 末端目标回到初始位置 |
+| Space | 暂停 / 继续 |
+| Backspace | 重置机器人 |
+
+松开按键后速度指令仍会保持，按 Enter 停车。查看器需要图形显示环境。
+Go2 也支持相同操作，将任务改为 `--task go2_arm_manip_loco` 并选择对应 checkpoint 即可。
 
 ### IK 检查
 

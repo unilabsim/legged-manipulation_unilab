@@ -404,6 +404,12 @@ class Go2ArmManipLocoCommand(CommandTerm):
         low = np.asarray(cfg.vel_limit[0], dtype=get_global_dtype())
         high = np.asarray(cfg.vel_limit[1], dtype=get_global_dtype())
         commands = self._env.rng.uniform(low, high, size=(count, 3)).astype(get_global_dtype())
+        pure_x_prob = float(cfg.pure_x_command_prob)
+        if not 0.0 <= pure_x_prob <= 1.0:
+            raise ValueError("pure_x_command_prob must be between 0 and 1")
+        if pure_x_prob > 0.0:
+            pure_x = self._env.rng.random(count) < pure_x_prob
+            commands[pure_x, 1:3] = 0.0
         commands[np.all(np.abs(commands) <= 0.1, axis=1)] = 0.0
         prob = float(cfg.zero_command_prob)
         if prob > 0.0:
@@ -471,10 +477,10 @@ class Go2ArmManipLocoCommand(CommandTerm):
         if env_ids is not None:
             return
         cfg = self._task_cfg
-        moving = self._command_is_moving(self.vel_command_b)
+        gait_active = self._gait_is_active(self.vel_command_b)
         advanced = np.fmod(self.phase + cfg.ctrl_dt * self.gait_frequency, 1.0)
-        self.phase = np.where(moving, advanced, 0.0).astype(np.float32)
-        self._write_feet_phase(slice(None), moving)
+        self.phase = np.where(gait_active, advanced, 0.0).astype(np.float32)
+        self._write_feet_phase(slice(None), gait_active)
         self._update_ee_trajectory()
         self._episode_steps += 1
         self._log_command_state()
@@ -500,8 +506,24 @@ class Go2ArmManipLocoCommand(CommandTerm):
     def _command_is_moving(self, commands: np.ndarray) -> np.ndarray:
         return np.any(np.abs(np.asarray(commands)[:, :3]) > 0.1, axis=1)
 
+    def _gait_is_active(self, commands: np.ndarray) -> np.ndarray:
+        if _action_layout(self._task_cfg).wheel_slice is not None:
+            cfg = self._task_cfg.command_config
+            thresholds = np.asarray(
+                [
+                    np.inf if cfg.gait_x_threshold is None else cfg.gait_x_threshold,
+                    cfg.gait_lateral_threshold,
+                    cfg.gait_yaw_threshold,
+                ],
+                dtype=np.float64,
+            )
+            if np.any(thresholds < 0.0) or np.any(np.isnan(thresholds)):
+                raise ValueError("Gait command thresholds must be non-negative")
+            return np.any(np.abs(np.asarray(commands, dtype=np.float64)[:, :3]) > thresholds, axis=1)
+        return self._command_is_moving(commands)
+
     def _write_feet_phase(
-        self, env_ids: np.ndarray | slice, moving: np.ndarray | None = None
+        self, env_ids: np.ndarray | slice, gait_active: np.ndarray | None = None
     ) -> None:
         phase = self.phase[env_ids]
         feet = self.feet_phase[env_ids].copy()
@@ -509,9 +531,9 @@ class Go2ArmManipLocoCommand(CommandTerm):
         feet[:, 3] = phase
         feet[:, 1] = (phase + 0.5) % 1.0
         feet[:, 2] = (phase + 0.5) % 1.0
-        if moving is None:
-            moving = self._command_is_moving(self.vel_command_b[env_ids])
-        feet[~moving] = 0.0
+        if gait_active is None:
+            gait_active = self._gait_is_active(self.vel_command_b[env_ids])
+        feet[~gait_active] = 0.0
         self.feet_phase[env_ids] = feet
 
     def _sample_timing(self, env_ids: np.ndarray) -> None:
@@ -694,6 +716,10 @@ class Go2ArmObservation(ManagerTermBase):
                 joint_pos = add(joint_pos, noise.scale_joint_angle)
                 joint_vel = add(joint_vel, noise.scale_joint_vel)
                 ee_pos = add(ee_pos, noise.scale_ee_pos)
+        wheel_slice = _action_layout(cfg).wheel_slice
+        if wheel_slice is not None:
+            # Continuous wheel angles carry no pose information; mask after noise.
+            joint_pos[:, _as_slice(wheel_slice)] = 0.0
         goal = command.curr_ee_goal_cart
         return np.concatenate(
             [
@@ -750,8 +776,6 @@ class Go2ArmReward(ManagerTermBase):
                 )
         self._ee_view = env.scene.bind_sensor_data((self._task_cfg.sensor.ee_local_pos,))
         self._entity: Entity = env.scene["robot"]
-        layout = _action_layout(self._task_cfg)
-        self._wheel_slice = _as_slice(layout.wheel_slice) if layout.wheel_slice is not None else None
         self._torque_view = None
         # Bind actuator-force sensors only when the term actually contributes:
         # motrix does not implement jointactuatorfrc sensors at all, and
@@ -816,6 +840,11 @@ class Go2ArmReward(ManagerTermBase):
             value = np.square(base_height - cfg.base_height_target)
         elif name == "similar_to_default":
             value = np.sum(np.abs(joint_pos - defaults), axis=1)
+        elif name == "hip_pos":
+            # The first 12 action rows are four ABAD/HIP/KNEE triplets.
+            # Go2W's hip deviation term constrains the lateral ABAD joints.
+            hip_error = (joint_pos[:, :12] - defaults[:, :12])[:, ::3]
+            value = np.sum(np.square(hip_error), axis=1)
         elif name == "leg_pose":
             n_joints = int(joint_pos.shape[1])
             if n_joints == 18:
@@ -856,25 +885,31 @@ class Go2ArmReward(ManagerTermBase):
         elif name == "stand_still":
             still = (~command._command_is_moving(cmd)).astype(get_global_dtype())
             value = still * np.sum(np.abs(joint_pos[:, :12] - defaults[:, :12]), axis=1)
-        elif name == "zero_lin_vel":
-            still = (~command._command_is_moving(cmd)).astype(get_global_dtype())
-            value = still * np.sum(np.square(linvel[:, :2]), axis=1)
-        elif name == "zero_ang_vel":
-            still = (~command._command_is_moving(cmd)).astype(get_global_dtype())
-            value = still * np.square(gyro[:, 2])
-        elif name == "zero_wheel_vel":
-            if self._wheel_slice is None:
-                raise ValueError("zero_wheel_vel requires action_layout.wheel_slice")
-            still = (~command._command_is_moving(cmd)).astype(get_global_dtype())
-            value = still * np.sum(np.square(joint_vel[:, self._wheel_slice]), axis=1)
-        elif name == "hip_soft":
-            moving = command._command_is_moving(cmd).astype(get_global_dtype())
-            hips = joint_pos[:, 1:12:3] - defaults[:, 1:12:3]
-            value = moving * np.sum(np.square(hips), axis=1)
+        elif name == "wheel_stand_still":
+            wheel_slice = _action_layout(self._task_cfg).wheel_slice
+            if wheel_slice is None:
+                value = np.zeros(env.num_envs, dtype=get_global_dtype())
+            else:
+                still = (~command._command_is_moving(cmd)).astype(get_global_dtype())
+                value = still * np.sum(np.square(joint_vel[:, _as_slice(wheel_slice)]), axis=1)
         elif name == "swing_feet_z":
             swing = command.feet_phase >= 0.6
             error = np.square(feet_pos[:, :, 2] - cfg.target_foot_height)
             value = np.sum(np.exp(-error / 0.01) * swing, axis=1) / len(self._feet_pos_names)
+        elif name == "mirrorup":
+            # N-P3O foot_mirror_up: raw ABAD/HIP/KNEE angle differences.
+            # L1W actuator order is FL, FR, RR, RL; Go2 is FL, FR, RL, RR.
+            rear_right, rear_left = (
+                (slice(6, 9), slice(9, 12))
+                if _action_layout(self._task_cfg).wheel_slice is not None
+                else (slice(9, 12), slice(6, 9))
+            )
+            error = 0.5 * (
+                np.sum(np.square(joint_pos[:, :3] - joint_pos[:, rear_right]), axis=1)
+                + np.sum(np.square(joint_pos[:, 3:6] - joint_pos[:, rear_left]), axis=1)
+            )
+            # World-frame body-up Z equals -projected_gravity_z in N-P3O.
+            value = error * np.clip(gravity[:, 2], 0.0, 1.0)
         elif name == "foot_drag":
             contact = feet_force[:, :, -1] < 0.5
             height_error = np.clip(cfg.target_foot_height / 2.0 - feet_pos[:, :, 2], 0.0, None)

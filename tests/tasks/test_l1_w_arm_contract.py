@@ -6,12 +6,18 @@ import importlib
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
 
 from legged_manipulation_unilab.assets import ASSETS_ROOT_PATH, resolve_scene
 from legged_manipulation_unilab.cli import compose_config
+from legged_manipulation_unilab.tasks.go2_arm.base import build_l1w_arm_position_gains
+from legged_manipulation_unilab.tasks.go2_arm.manager_env import Go2ArmManipLocoCommand
+from legged_manipulation_unilab.tasks.go2_arm.manip_loco import CommandsConfig
+from legged_manipulation_unilab.tasks.l1_w_arm.manager_env import L1WArmReward
+from legged_manipulation_unilab.tasks.l1_w_arm.manip_loco import L1WArmCommandsConfig
 
 _L1W_MODULE = "legged_manipulation_unilab.tasks.l1_w_arm.manip_loco"
 _REGISTRY_MODULE = "unilab.base.registry"
@@ -35,7 +41,7 @@ def _ensure_registered() -> None:
 def _reward_override(reward_names: tuple[str, ...] = ("tracking_lin_vel",)) -> dict:
     return {
         name: {
-            "func": "legged_manipulation_unilab.tasks.go2_arm.manager_env.Go2ArmReward",
+            "func": "legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward",
             "weight": 1.0,
             "params": {"name": name},
         }
@@ -89,6 +95,11 @@ def test_l1_w_arm_config_uses_manager_terms_and_22_dof_layout():
     assert cfg.action_layout.wheel_slice == (12, 16)
     assert cfg.asset.base_name == "BASE_LINK"
     assert cfg.scene.default_keyframe_name == "home"
+    gains = build_l1w_arm_position_gains(cfg.control_config)
+    np.testing.assert_array_equal(gains["kp"][:12], 50.0)
+    np.testing.assert_array_equal(gains["kd"][:12], 1.0)
+    cfg.set_reward_terms({"tracking_lin_vel": 1.0})
+    assert cfg.rewards["tracking_lin_vel"].func is L1WArmReward
     cfg.domain_rand = {"randomize_body_mass": True, "body_mass_multiplier_range": [0.9, 1.1]}
     body_names = cfg._build_events()["body_mass"].params["asset_cfg"].body_names
     assert "arm_base_on_l1" not in body_names
@@ -127,38 +138,97 @@ def test_l1_w_arm_resolve_scene_materializes_packaged_xml(tmp_path, monkeypatch)
     assert Path(resolved).is_file()
 
 
-def test_l1_w_zero_lin_vel_is_stand_only():
-    cfg = compose_config("ppo", "mujoco", [], task="l1_w_arm_manip_loco")
-    assert cfg.reward.zero_lin_vel.weight == pytest.approx(-20.0)
-    assert cfg.reward.zero_lin_vel.params.name == "zero_lin_vel"
-    assert cfg.reward.zero_ang_vel.weight == pytest.approx(0.0)
-    assert cfg.reward.zero_ang_vel.params.name == "zero_ang_vel"
-    assert cfg.reward.zero_wheel_vel.weight == pytest.approx(-0.5)
-    assert cfg.reward.zero_wheel_vel.params.name == "zero_wheel_vel"
-    assert cfg.reward.hip_soft.weight == pytest.approx(0.0)
-    assert cfg.reward.hip_soft.params.name == "hip_soft"
-    assert cfg.reward.tracking_lin_vel.weight == pytest.approx(2.0)
-    assert cfg.reward.tracking_ang_vel.weight == pytest.approx(1.0)
-    assert cfg.env.reward_parameters.tracking_sigma == pytest.approx(0.25)
-
-
 def test_l1_w_arm_owner_composition_identity():
+    _ensure_registered()
+    registry = _registry_module()
     cfg = compose_config("ppo", "mujoco", [], task="l1_w_arm_manip_loco")
     assert cfg.training.task_name == "L1WArmManipLoco"
     assert cfg.training.sim_backend == "mujoco"
     assert cfg.training.log_root == "logs/ppo-mujoco-l1w"
     cfg_him = compose_config("him_ppo", "mujoco", [], task="l1_w_arm_manip_loco")
     assert cfg_him.algo.num_one_step_obs == 88
+    assert set(cfg_him.reward) == set(cfg.reward)
+    assert len(cfg.reward) == 18
+    assert cfg_him.env.command_config.gait_frequency == pytest.approx(1.8)
+    assert cfg_him.env.arm_stage.freeze_arm_joints is False
+    assert cfg_him.env.arm_stage.disable_ee_goal_trajectory is False
+    him_task_cfg = registry.materialize_env_config("L1WArmManipLoco")
+    him_task_cfg.domain_rand = dict(cfg_him.env.domain_rand)
+    him_events = him_task_cfg._build_events()
+    assert him_events["body_mass"].mode == "reset"
+    assert him_events["body_mass"].params["asset_cfg"].body_names == (
+        "arm_base",
+        "link1",
+        "link2",
+        "link3",
+        "link4",
+        "link5",
+        "link6",
+    )
+    assert him_events["base_mass"].params["asset_cfg"].body_names == ("BASE_LINK",)
+    for owner in (
+        cfg,
+        compose_config("ppo", "motrix", [], task="l1_w_arm_manip_loco"),
+        cfg_him,
+    ):
+        assert owner.env.control_config.leg_kp == pytest.approx(50.0)
+        assert owner.env.control_config.leg_kd == pytest.approx(1.0)
+        assert owner.env.command_config.pure_x_command_prob == pytest.approx(0.35)
+        assert owner.env.command_config.gait_x_threshold == pytest.approx(0.5)
+        assert owner.env.command_config.gait_lateral_threshold == pytest.approx(0.08)
+        assert owner.env.command_config.gait_yaw_threshold == pytest.approx(0.12)
+        assert owner.reward
+        assert "rolling_leg_motion" not in owner.reward
+        assert "rolling_foot_lift" not in owner.reward
+        assert all(
+            term.func == "legged_manipulation_unilab.tasks.l1_w_arm.manager_env.L1WArmReward"
+            for term in owner.reward.values()
+        )
     with pytest.raises(ValueError, match="identity"):
         compose_config(
             "ppo", "mujoco", ["training={sim_backend:unknown}"], task="l1_w_arm_manip_loco"
         )
 
 
+def test_l1_w_arm_samples_pure_forward_and_backward_commands():
+    count = 20_000
+    ids = np.arange(count)
+
+    def sample(cfg):
+        command = SimpleNamespace(
+            _task_cfg=SimpleNamespace(command_config=cfg),
+            _env=SimpleNamespace(rng=np.random.default_rng(7)),
+            vel_command_b=np.zeros((count, 3), dtype=np.float32),
+        )
+        Go2ArmManipLocoCommand._sample_velocity(command, ids)
+        return command.vel_command_b
+
+    wheel_commands = sample(L1WArmCommandsConfig(zero_command_prob=0.15))
+    pure_x = (np.abs(wheel_commands[:, 0]) > 0.1) & np.all(
+        wheel_commands[:, 1:3] == 0.0, axis=1
+    )
+    assert 0.2 < np.mean(pure_x) < 0.35
+    assert np.any(wheel_commands[pure_x, 0] > 0.0)
+    assert np.any(wheel_commands[pure_x, 0] < 0.0)
+
+    go2_commands = sample(CommandsConfig(zero_command_prob=0.15))
+    go2_pure_x = (np.abs(go2_commands[:, 0]) > 0.1) & np.all(
+        go2_commands[:, 1:3] == 0.0, axis=1
+    )
+    assert not np.any(go2_pure_x)
+
+
 @pytest.mark.slow
 def test_l1_w_arm_mba_reset_step_contract():
     pytest.importorskip("mujoco", reason="mujoco not installed")
-    env = _make_env(num_envs=2)
+    env = _make_env(
+        num_envs=2,
+        reward_names=(
+            "tracking_lin_vel",
+            "contact",
+            "swing_feet_z",
+        ),
+    )
     try:
         assert env.obs_groups_spec == {"obs": 440, "critic": 91}
         assert env.action_space.shape == (22,)
